@@ -1,0 +1,10 @@
+{
+    "id": "nope.alllogstoconsole",
+    "name": "All Logs To Console",
+    "version": "0.0.1",
+    "authors": "Nope",
+    "description": "I need more logs",
+    "requirements": [],
+    "requirements_names": [],
+    "checksum_override_version": true
+  }
