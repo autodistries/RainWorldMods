@@ -1,14 +1,8 @@
 ﻿using BepInEx;
 using System.Reflection;
 using MonoMod.RuntimeDetour;
-using System.Diagnostics;
 using System.IO;
-using BepInEx.Configuration;
-using System.Linq;
-using System.Collections.Generic;
-using System.Data.Common;
-using System;
-using IL.Menu;
+
 
 namespace MoreLogs;
 
@@ -33,7 +27,7 @@ public class MoreLogger : BaseUnityPlugin
         string targetPath = UnityEngine.Application.streamingAssetsPath + "/mods/MoreLogs/ononce";
         if (true || !File.Exists(targetPath))
         {
-            log("First launch ! Enabling BepInEx console and prompting user to restart");
+            log("First launch ! Enabling BepInEx console. User should restart !");
 
             // drop the presence file in our directory
             // FileStream fs = new FileStream(targetPath, FileMode.CreateNew);
