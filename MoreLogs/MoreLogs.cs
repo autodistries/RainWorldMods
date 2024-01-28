@@ -25,13 +25,13 @@ public class MoreLogger : BaseUnityPlugin
         log("Hooked RainWorld.ShowLogs with success");
 
         string targetPath = UnityEngine.Application.streamingAssetsPath + "/mods/MoreLogs/ononce";
-        if (true || !File.Exists(targetPath))
+        if (!File.Exists(targetPath))
         {
             log("First launch ! Enabling BepInEx console. User should restart !");
 
             // drop the presence file in our directory
-            // FileStream fs = new FileStream(targetPath, FileMode.CreateNew);
-            // fs.Close();
+            FileStream fs = new FileStream(targetPath, FileMode.CreateNew);
+            fs.Close();
 
             analyzeBepConfigFile();
         }
