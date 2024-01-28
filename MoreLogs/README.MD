@@ -1,6 +1,7 @@
 This (very simple) Rain World mod makes the game log more things to console.
 You then can view more logs as the game runs !
-For this mod to actually be useful to you, please set the option Enabled:
+For this however, you need some way to view logs.
+As such, this mod will enable this option in Rain World\BepInEx\config\BepInEx.cfg on first run only:
 ```
 [Logging.Console]
 
@@ -9,7 +10,9 @@ For this mod to actually be useful to you, please set the option Enabled:
 # Default value: false
 Enabled = true #<- yes this
 ```
-(in Rain World\BepInEx\config\BepInEx.cfg) to true; it will open a terminal when game launches and logs will be logged
+The game will then (from next time) will open a terminal when game launches and logs will be logged.
+You can set it to true (or false) manually (before and after) if you prefer.
+NB: deleting the "ononce" file in the mod's dir will make it activate again
 
 
 ## Why ?
@@ -27,6 +30,7 @@ Copy the MoreLogs folder from this repo into Rain World's mods folder; restart a
 
 ## Building
 You'll need a well set-up .NET environnment.
+You should edit the Rain World dir in the .csproj so that dlls are well referenced
 Then you can simply build the project (dotnet build for linux).
 Output dll is located at ./MoreLogs/plugins/MoreLogs.dll
 

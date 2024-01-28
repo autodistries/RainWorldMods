@@ -1,9 +1,9 @@
 {
     "id": "nope.alllogstoconsole",
     "name": "All Logs To Console",
-    "version": "0.0.1",
+    "version": "1.0.0",
     "authors": "Nope",
-    "description": "I need more logs",
+    "description": "Makes game show more logs.\nThis mod will only be useful to you if you have some way of seeing logs.\nAs such, on its first run only, the mod will enable BepInEx's Console in your BepInEx/config/BepInEx.cfg, and you will need to restart the game for these changes to apply.\nYou can still disable this parameter anytime.",
     "requirements": [],
     "requirements_names": [],
     "checksum_override_version": true

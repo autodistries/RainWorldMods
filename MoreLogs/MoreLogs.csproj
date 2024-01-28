@@ -5,13 +5,13 @@
        <LangVersion>11</LangVersion>
        <OutDir>./MoreLogs/plugins/</OutDir>
        <DebugType>None</DebugType>
-<DebugSymbols>False</DebugSymbols>
+      <DebugSymbols>False</DebugSymbols>
      <RWDir>../../../.steam/debian-installation/steamapps/common/Rain World/</RWDir>
 
   </PropertyGroup>
 
   <ItemGroup>
-    
+
 <Reference Include="MonoMod.RuntimeDetour">
       <HintPath>$(RWDir)/BepInEx/core/MonoMod.RuntimeDetour.dll</HintPath>
        <Private>false</Private>
