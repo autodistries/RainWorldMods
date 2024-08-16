@@ -1,0 +1,10 @@
+{
+    "id": "nope.sleepyslugcat",
+    "name": "Sleepy Slugcat",
+    "version": "2.1",
+    "authors": "Nope",
+    "description": "gescription",
+    "requirements": [],
+    "requirements_names": [],
+    "checksum_override_version": true
+  }
