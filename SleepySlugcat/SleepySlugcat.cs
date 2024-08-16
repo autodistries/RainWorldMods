@@ -71,12 +71,12 @@ public partial class SleepySlugcatto : BaseUnityPlugin
         {
             LocalLogSource.LogInfo("filling in all lists to match players count ! (mod)" + self.abstractCreature.world.game.Players.Count);
 
-            
+
 
             for (int i = 0; i < self.abstractCreature.world.game.Players.Count; i++)
             {
                 playerNumberEquivalent.Add((self.room.game.Players[i].realizedCreature as Player).slugcatStats.name.Index, i);
-                LocalLogSource.LogInfo("i:"+i+" index:"+(self.room.game.Players[i].realizedCreature as Player).slugcatStats.name.Index+ "translation:"+translatedPlayerNumber((self.room.game.Players[i].realizedCreature as Player).slugcatStats.name.Index)+" playerstate:"+self.playerState.playerNumber );
+                LocalLogSource.LogInfo("i:"+i+" index:"+(self.room.game.Players[i].realizedCreature as Player).slugcatStats.name.Index+ "translation:"+translatedPlayerNumber((self.room.game.Players[i].realizedCreature as Player).slugcatStats.name.Index)+" playerNumber:"+self.playerState.playerNumber );
                 sleeping.Add(false);
                 wakeUp.Add(false);
                 forbidGrasps.Add(false);
@@ -91,21 +91,21 @@ public partial class SleepySlugcatto : BaseUnityPlugin
 
         // showZs(self);
 
-        if (sleeping[translatedPlayerNumber(self.playerState.playerNumber)])
+        if (sleeping[translatedPlayerNumber(self.slugcatStats.name.Index)])
         {
             if (!singleZs) showZs(self);
         }
-        if (sleeping[translatedPlayerNumber(self.playerState.playerNumber)] &&
-        (wakeUp[translatedPlayerNumber(self.playerState.playerNumber)] || self.input[translatedPlayerNumber(self.playerState.playerNumber)].y > 0 || self.input[translatedPlayerNumber(self.playerState.playerNumber)].x != 0 || self.input[translatedPlayerNumber(self.playerState.playerNumber)].jmp
-        || currentThreat[translatedPlayerNumber(self.playerState.playerNumber)].currentThreat > 0.30f
+        if (sleeping[translatedPlayerNumber(self.slugcatStats.name.Index)] &&
+        (wakeUp[translatedPlayerNumber(self.slugcatStats.name.Index)] || self.input[translatedPlayerNumber(self.slugcatStats.name.Index)].y > 0 || self.input[translatedPlayerNumber(self.slugcatStats.name.Index)].x != 0 || self.input[translatedPlayerNumber(self.slugcatStats.name.Index)].jmp
+        || currentThreat[translatedPlayerNumber(self.slugcatStats.name.Index)].currentThreat > 0.30f
         || self.bodyMode.value != "Crawl" || self.grabbedBy.Count != 0
         || self.dead || self.Submersion > 0.6f))
         {
              LocalLogSource.LogInfo("waking up rn");
-            wakeUp[translatedPlayerNumber(self.playerState.playerNumber)] = false;
+            wakeUp[translatedPlayerNumber(self.slugcatStats.name.Index)] = false;
             self.forceSleepCounter = 0;
-            sleeping[translatedPlayerNumber(self.playerState.playerNumber)] = false;
-            forbidGrasps[translatedPlayerNumber(self.playerState.playerNumber)] = false;
+            sleeping[translatedPlayerNumber(self.slugcatStats.name.Index)] = false;
+            forbidGrasps[translatedPlayerNumber(self.slugcatStats.name.Index)] = false;
         }
         debugCounter++;
         debugCounter %= 40;
@@ -114,7 +114,7 @@ public partial class SleepySlugcatto : BaseUnityPlugin
 
         if (debugCounter % 10 == 0 || debugCounter % 10 == 1)
         {
-            if (!self.dead) currentThreat[translatedPlayerNumber(self.playerState.playerNumber)].Update(self.abstractCreature.world.game);
+            if (!self.dead) currentThreat[translatedPlayerNumber(self.slugcatStats.name.Index)].Update(self.abstractCreature.world.game);
 
             // showOrUpdateTheThreats(self); // debug thingie !
         }
@@ -122,11 +122,11 @@ public partial class SleepySlugcatto : BaseUnityPlugin
 
 
 
-        if (!sleeping[translatedPlayerNumber(self.playerState.playerNumber)] && self.Consious
+        if (!sleeping[translatedPlayerNumber(self.slugcatStats.name.Index)] && self.Consious
         && !self.inShortcut // while in shortcuts, no ground, so IsTileSolid nullrefs
-        && self.input[translatedPlayerNumber(self.playerState.playerNumber)].y < 0 && !self.input[translatedPlayerNumber(self.playerState.playerNumber)].jmp && !self.input[translatedPlayerNumber(self.playerState.playerNumber)].thrw && !self.input[translatedPlayerNumber(self.playerState.playerNumber)].pckp && Math.Abs(self.input[translatedPlayerNumber(self.playerState.playerNumber)].x) < 0.2f // Check for self.inputs: only down
+        && self.input[translatedPlayerNumber(self.slugcatStats.name.Index)].y < 0 && !self.input[translatedPlayerNumber(self.slugcatStats.name.Index)].jmp && !self.input[translatedPlayerNumber(self.slugcatStats.name.Index)].thrw && !self.input[translatedPlayerNumber(self.slugcatStats.name.Index)].pckp && Math.Abs(self.input[translatedPlayerNumber(self.slugcatStats.name.Index)].x) < 0.2f // Check for self.inputs: only down
         && self.IsTileSolid(1, 0, -1) //&& ((!self.IsTileSolid(1, -1, -1) || !self.IsTileSolid(1, 1, -1)) && self.IsTileSolid(1, self.input[0].x, 0)) // check if we have ground to sleep on
-        && currentThreat[translatedPlayerNumber(self.playerState.playerNumber)].currentThreat < 0.15f // check if we feel threatened
+        && currentThreat[translatedPlayerNumber(self.slugcatStats.name.Index)].currentThreat < 0.15f // check if we feel threatened
         && !self.room.abstractRoom.shelter // do not nap while in shelter
         )
         {
@@ -138,18 +138,18 @@ public partial class SleepySlugcatto : BaseUnityPlugin
 
 
             }
-            // LocalLogSource.LogInfo("P" + translatedPlayerNumber(self.playerState.playerNumber) + " " + self.forceSleepCounter + " " + self.sleepCurlUp + " " + self.sleepCounter);
+            // LocalLogSource.LogInfo("P" + translatedPlayerNumber(self.slugcatStats.name.Index) + " " + self.forceSleepCounter + " " + self.sleepCurlUp + " " + self.sleepCounter);
         }
 
-        else if (!sleeping[translatedPlayerNumber(self.playerState.playerNumber)] && self.forceSleepCounter > 0)
+        else if (!sleeping[translatedPlayerNumber(self.slugcatStats.name.Index)] && self.forceSleepCounter > 0)
         {
             self.forceSleepCounter--; // gradually decrease sleepiness if threshsold not reached
         }
 
         if (self.forceSleepCounter > 260)
         {
-            sleeping[translatedPlayerNumber(self.playerState.playerNumber)] = true;
-            forbidGrasps[translatedPlayerNumber(self.playerState.playerNumber)] = true;
+            sleeping[translatedPlayerNumber(self.slugcatStats.name.Index)] = true;
+            forbidGrasps[translatedPlayerNumber(self.slugcatStats.name.Index)] = true;
         }
 
         orig(self, eu);
@@ -165,7 +165,7 @@ public partial class SleepySlugcatto : BaseUnityPlugin
     /// <returns></returns>
     private bool CanWeReallyGrabThatRn(On.Player.orig_CanIPickThisUp orig, Player self, PhysicalObject obj)
     {
-        if (forbidGrasps[translatedPlayerNumber(self.playerState.playerNumber)]) return false;
+        if (forbidGrasps[translatedPlayerNumber(self.slugcatStats.name.Index)]) return false;
         return orig(self, obj);
     }
 
@@ -179,9 +179,9 @@ public partial class SleepySlugcatto : BaseUnityPlugin
     /// <param name="otherChunk"></param>
     private void WtfWeGotHit(On.Player.orig_Collide orig, Player self, PhysicalObject otherObject, int myChunk, int otherChunk)
     {
-        if (sleeping[translatedPlayerNumber(self.playerState.playerNumber)])
+        if (sleeping[translatedPlayerNumber(self.slugcatStats.name.Index)])
         {
-            wakeUp[translatedPlayerNumber(self.playerState.playerNumber)] = true;
+            wakeUp[translatedPlayerNumber(self.slugcatStats.name.Index)] = true;
             self.forceSleepCounter = 0;
             // LocalLogSource.LogInfo("collided");
         }
@@ -195,9 +195,9 @@ public partial class SleepySlugcatto : BaseUnityPlugin
     /// <param name="self"></param>
     private void WhyDidIDie(On.Player.orig_Die orig, Player self)
     {
-        if (sleeping[translatedPlayerNumber(self.playerState.playerNumber)] || self.sleepCurlUp > 0.5f)
+        if (sleeping[translatedPlayerNumber(self.slugcatStats.name.Index)] || self.sleepCurlUp > 0.5f)
         {
-            wakeUp[translatedPlayerNumber(self.playerState.playerNumber)] = true;
+            wakeUp[translatedPlayerNumber(self.slugcatStats.name.Index)] = true;
             self.forceSleepCounter = 0;
             self.sleepCurlUp = 0f;
             // LocalLogSource.LogInfo("died");
@@ -255,7 +255,7 @@ public partial class SleepySlugcatto : BaseUnityPlugin
             //  if (Zs.text != modOptions.Zs)
             if (Zs.decayEnabled != modOptions.ZsColorIsDecayOnConfigurable.Value) Zs.decayEnabled = modOptions.ZsColorIsDecayOnConfigurable.Value;
             if (Zs.text != modOptions.ZsTextContentConfigurable.Value) Zs.text = modOptions.ZsTextContentConfigurable.Value;
-            // LocalLogSource.LogInfo("Spawning a bubble P" + translatedPlayerNumber(self.playerState.playerNumber) + " " + " " + self.forceSleepCounter + " " + self.sleepCurlUp + " " + self.sleepCounter + " mode: "+modOptions.ZsColorTypeConfigurable.Value + " rainbow:"+modOptions.ZsColorRainbowTypeConfigurable.Value);
+            // LocalLogSource.LogInfo("Spawning a bubble P" + translatedPlayerNumber(self.slugcatStats.name.Index) + " " + " " + self.forceSleepCounter + " " + self.sleepCurlUp + " " + self.sleepCounter + " mode: "+modOptions.ZsColorTypeConfigurable.Value + " rainbow:"+modOptions.ZsColorRainbowTypeConfigurable.Value);
             Zs.baseSizeVar = modOptions.ZsSizeVarianceConfigurable.Value;
             self.room.AddObject(
                 new Zs(
@@ -265,7 +265,7 @@ public partial class SleepySlugcatto : BaseUnityPlugin
                     getZsColor(self)
                 )
                 {
-                    parentPlayerId = translatedPlayerNumber(self.playerState.playerNumber),
+                    parentPlayerId = translatedPlayerNumber(self.slugcatStats.name.Index),
                     rainbow = ((modOptions.ZsColorIsRainbowConfigurable.Value) ? modOptions.ZsColorRainbowTypeConfigurable.Value : ""),
 
                 }
@@ -341,35 +341,35 @@ public partial class SleepySlugcatto : BaseUnityPlugin
 
     private void showOrUpdateTheThreats(Player self) //this is a debug function btw
     {
-        if (!self.dead && threatLabel[translatedPlayerNumber(self.playerState.playerNumber)] == null)
+        if (!self.dead && threatLabel[translatedPlayerNumber(self.slugcatStats.name.Index)] == null)
         {
 
             // LocalLogSource.LogInfo("threatd ok");
-            string text = $"threat: {currentThreat[translatedPlayerNumber(self.playerState.playerNumber)].threat}\ncurrentThreat: {currentThreat[translatedPlayerNumber(self.playerState.playerNumber)].currentThreat}\n musicAgnosticThreat: {currentThreat[translatedPlayerNumber(self.playerState.playerNumber)].musicAgnosticThreat}\ncurrentMusicAgnosticThreat: {currentThreat[translatedPlayerNumber(self.playerState.playerNumber)].currentMusicAgnosticThreat}\n{debugCounter}";
+            string text = $"threat: {currentThreat[translatedPlayerNumber(self.slugcatStats.name.Index)].threat}\ncurrentThreat: {currentThreat[translatedPlayerNumber(self.slugcatStats.name.Index)].currentThreat}\n musicAgnosticThreat: {currentThreat[translatedPlayerNumber(self.slugcatStats.name.Index)].musicAgnosticThreat}\ncurrentMusicAgnosticThreat: {currentThreat[translatedPlayerNumber(self.slugcatStats.name.Index)].currentMusicAgnosticThreat}\n{debugCounter}";
 
-            threatLabel[translatedPlayerNumber(self.playerState.playerNumber)] = new FLabel(RWCustom.Custom.GetFont(), text)
+            threatLabel[translatedPlayerNumber(self.slugcatStats.name.Index)] = new FLabel(RWCustom.Custom.GetFont(), text)
             {
                 alignment = FLabelAlignment.Left,
-                x = 100.2f + translatedPlayerNumber(self.playerState.playerNumber) * 200f,
+                x = 100.2f + translatedPlayerNumber(self.slugcatStats.name.Index) * 200f,
                 y = RWCustom.Custom.rainWorld.options.ScreenSize.y - 50.2f
             };
 
             // LocalLogSource.LogInfo("label creation ok ok");
 
-            Futile.stage.AddChild(threatLabel[translatedPlayerNumber(self.playerState.playerNumber)]);
+            Futile.stage.AddChild(threatLabel[translatedPlayerNumber(self.slugcatStats.name.Index)]);
             // LocalLogSource.LogInfo("addding label ok");
         }
-        else if (threatLabel[translatedPlayerNumber(self.playerState.playerNumber)] != null)
+        else if (threatLabel[translatedPlayerNumber(self.slugcatStats.name.Index)] != null)
         {
-            string text = $"P{translatedPlayerNumber(self.playerState.playerNumber)}\nthreat: {currentThreat[translatedPlayerNumber(self.playerState.playerNumber)].threat}\ncurrentThreat: {currentThreat[translatedPlayerNumber(self.playerState.playerNumber)].currentThreat}\n musicAgnosticThreat: {currentThreat[translatedPlayerNumber(self.playerState.playerNumber)].musicAgnosticThreat}\ncurrentMusicAgnosticThreat: {currentThreat[translatedPlayerNumber(self.playerState.playerNumber)].currentMusicAgnosticThreat}\n{debugCounter}";
+            string text = $"P{translatedPlayerNumber(self.slugcatStats.name.Index)}\nthreat: {currentThreat[translatedPlayerNumber(self.slugcatStats.name.Index)].threat}\ncurrentThreat: {currentThreat[translatedPlayerNumber(self.slugcatStats.name.Index)].currentThreat}\n musicAgnosticThreat: {currentThreat[translatedPlayerNumber(self.slugcatStats.name.Index)].musicAgnosticThreat}\ncurrentMusicAgnosticThreat: {currentThreat[translatedPlayerNumber(self.slugcatStats.name.Index)].currentMusicAgnosticThreat}\n{debugCounter}";
 
-            threatLabel[translatedPlayerNumber(self.playerState.playerNumber)].text = text;
+            threatLabel[translatedPlayerNumber(self.slugcatStats.name.Index)].text = text;
 
             if (self.dead)
             {
-                // LocalLogSource.LogInfo("removing debug info for P" + translatedPlayerNumber(self.playerState.playerNumber));
-                Futile.stage.RemoveChild(threatLabel[translatedPlayerNumber(self.playerState.playerNumber)]);
-                threatLabel[translatedPlayerNumber(self.playerState.playerNumber)] = null;
+                // LocalLogSource.LogInfo("removing debug info for P" + translatedPlayerNumber(self.slugcatStats.name.Index));
+                Futile.stage.RemoveChild(threatLabel[translatedPlayerNumber(self.slugcatStats.name.Index)]);
+                threatLabel[translatedPlayerNumber(self.slugcatStats.name.Index)] = null;
             }
         }
 
