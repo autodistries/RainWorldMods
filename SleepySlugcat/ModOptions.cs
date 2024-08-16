@@ -141,7 +141,7 @@ public class ModOptions : OptionInterface
         OpLabel TextContentOpLabel = new OpLabel(decalagex, DecalageY(), "Custom z text", false);
         usableOpTextContentTextBox = new(ZsTextContentConfigurable, new Vector2(120f, DecalageY(true)), 150f);
 
-        OpLabel sizeVarianceOpLabel = new OpLabel(decalagex, DecalageY(), "Variance of the Zs", false);
+        OpLabel sizeVarianceOpLabel = new OpLabel(decalagex, DecalageY(), "Size diff of the Zs", false);
         usableOpSizeVarianceSlider = new(ZsSizeVarianceConfigurable, new Vector2(120f, DecalageY(true) - 3f), 200)
         {
             description = "Determines how big Zs' are"
