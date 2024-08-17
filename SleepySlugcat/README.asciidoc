@@ -17,7 +17,8 @@ Download the xref:SleepySlugcat.zip[zip] and extract the wole zip to Rain World/
 
 image::imagesForDescription/customText.png[]
 
-In future upgrades, except :
+.In future upgrades, except :
+
 * Workshop release
 * Zs flow regulation
 * Specific high-quality Z for Zs only
