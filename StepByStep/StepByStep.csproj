@@ -1,0 +1,86 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <!-- This is the place where you input mod data ! 
+        Other files will get updated based on that.
+        Put whatever you want inside here : -->
+        <PluginID>"nope.stepbystep"</PluginID>
+        <Product>"Step By Step"</Product>
+        <Version>1.0.1</Version>
+        <Desc>"This mod lets you stop the game and let it run frame by frame.&lt;LINE&gt;By default, press P to pause and L to step forwards. You can hold L to do chain multiple steps. Press P again to resume the game normally.&lt;LINE&gt;You can configure keybinds and chain speed in the remix menu.&lt;LINE&gt;If you press other keys when stepping, the game will recieve them and act accordingly.&lt;LINE&gt;&lt;LINE&gt;Possible use cases include analyzing a situation before reacting, debugging at what frame/action your mod does not work, or practising/performing movment tech at a frame-level precision"</Desc>
+
+        <TargetFramework>net48</TargetFramework>
+        <LangVersion>11</LangVersion>
+
+        <!-- These are variables we'll use inside this file -->
+        <OutDir>./$(AssemblyName)/plugins/</OutDir> <!-- where the compiled mod will be placed -->
+        <RWDir>$(HOME)/.local/share/Steam/steamapps/common/Rain World/</RWDir> <!-- The path where your Rain World executable is stored -->
+        <LocalLibsDir>./libs/</LocalLibsDir> <!-- The path where you can put local libs. You won't need that for most projects -->
+
+        <!-- This is for outputting pdb files -->
+        <DebugSymbols>False</DebugSymbols>
+        <DebugType>None</DebugType>
+    </PropertyGroup>
+   
+
+   <!-- This group fetches every dll from the game & from BepInEx -->
+    <ItemGroup>
+        <Reference Include="$(RWDir)RainWorld_Data/Managed/*.dll">
+            <Private>false</Private>
+        </Reference>
+        <Reference Include="$(RWDir)BepInEx/*/*.dll">
+        <Private>false</Private>
+        </Reference>
+
+    </ItemGroup>
+   
+    <!-- This event writes off the modinfo.json file, then copies the whole mod to the mods folder -->
+    <Target Name="PostBuild" AfterTargets="PostBuildEvent">
+        <PropertyGroup>
+            <ModinfoGeneric><![CDATA[
+  {
+    "id"%3A $(PluginID),
+    "name"%3A $(Product),
+    "version"%3A "$(Version)",
+    "authors"%3A "Nope",
+    "description"%3A $(Desc),
+    "requirements"%3A [],
+    "requirements_names"%3A [],
+    "checksum_override_version"%3A true,
+    "tags" %3A ["Tools"]
+  }
+
+        ]]></ModinfoGeneric>
+        </PropertyGroup>
+        <WriteLinesToFile Lines="$(modinfoGeneric)" File="./$(AssemblyName)/modinfo.json" WriteOnlyWhenDifferent="true" Overwrite="true" Condition="Exists('./$(AssemblyName)')" />
+        <Exec command="echo Updated ./$(AssemblyName)/modinfo.json" />
+        <Exec Command="cp -r ./$(AssemblyName) '$(RWDir)'RainWorld_Data/StreamingAssets/mods/; echo 'Copied mod data to Rain World mods folder'" Condition="'$(OS)' == 'Unix'" />
+        <Exec Command="echo Zipping the mod!; zip -r  ./$(AssemblyName) ./$(AssemblyName)"  Condition="'$(OS)' == 'Unix'" />
+    </Target>
+
+
+
+    <!-- This action fills the PluginInfo.cs with the info on top of this document-->
+    <Target Name="AddGeneratedFile" BeforeTargets="BeforeCompile;CoreCompile" Inputs="./" Outputs="./PluginInfo.cs">
+        <PropertyGroup>
+            <BepInExPluginGuid>$(PluginID)</BepInExPluginGuid>
+            <BepInExPluginName>$(Product)</BepInExPluginName>
+            <BepInExPluginVersion>$(Version)</BepInExPluginVersion>
+            <GeneratedText><![CDATA[
+namespace $(RootNamespace)
+{
+    public static class PluginInfo
+    {
+        public const string PLUGIN_GUID = $(BepInExPluginGuid)%3B
+        public const string PLUGIN_NAME = $(BepInExPluginName)%3B
+        public const string PLUGIN_VERSION = "$(BepInExPluginVersion)"%3B
+    }
+}
+      ]]></GeneratedText>
+            <GeneratedFilePath>./PluginInfo.cs</GeneratedFilePath>
+        </PropertyGroup>
+        <ItemGroup>
+            <Compile Include="$(GeneratedFilePath)" />
+        </ItemGroup>
+        <WriteLinesToFile Lines="$(GeneratedText)" File="$(GeneratedFilePath)" WriteOnlyWhenDifferent="false" Overwrite="true" />
+    </Target>
+</Project>

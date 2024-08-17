@@ -1,0 +1,11 @@
+{
+    "id": "nope.stepbystep",
+    "name": "Step By Step",
+    "version": "1.0.1",
+    "authors": "Nope",
+    "description": "This mod lets you stop the game and let it run frame by frame.<LINE>By default, press P to pause and L to step forwards. You can hold L to do chain multiple steps. Press P again to resume the game normally.<LINE>You can configure keybinds and chain speed in the remix menu.<LINE>If you press other keys when stepping, the game will recieve them and act accordingly.<LINE><LINE>Possible use cases include analyzing a situation before reacting, debugging at what frame/action your mod does not work, or practising/performing movment tech at a frame-level precision",
+    "requirements": [],
+    "requirements_names": [],
+    "checksum_override_version": true,
+    "tags" : ["Tools"]
+  }
