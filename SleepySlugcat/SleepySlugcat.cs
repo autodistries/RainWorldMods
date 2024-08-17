@@ -4,6 +4,7 @@ using static SleepySlugcat.PluginInfo;
 using UnityEngine;
 using System.Collections.Generic;
 using System;
+using System.Linq;
 
 
 namespace SleepySlugcat;
@@ -254,7 +255,8 @@ public partial class SleepySlugcatto : BaseUnityPlugin
         {
             //  if (Zs.text != modOptions.Zs)
             if (Zs.decayEnabled != modOptions.ZsColorIsDecayOnConfigurable.Value) Zs.decayEnabled = modOptions.ZsColorIsDecayOnConfigurable.Value;
-            if (Zs.text != modOptions.ZsTextContentConfigurable.Value) Zs.text = modOptions.ZsTextContentConfigurable.Value;
+            if (Zs.text != modOptions.ZsTextContentConfigurable.Value) {Zs.text = modOptions.ZsTextContentConfigurable.Value; Zs.onlyZs = Zs.text.ToLower().All((el) => el == 'z');}
+
             // LocalLogSource.LogInfo("Spawning a bubble P" + translatedPlayerNumber(self.slugcatStats.name.Index) + " " + " " + self.forceSleepCounter + " " + self.sleepCurlUp + " " + self.sleepCounter + " mode: "+modOptions.ZsColorTypeConfigurable.Value + " rainbow:"+modOptions.ZsColorRainbowTypeConfigurable.Value);
             Zs.baseSizeVar = modOptions.ZsSizeVarianceConfigurable.Value;
             self.room.AddObject(

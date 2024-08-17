@@ -25,6 +25,8 @@ public class Zs : CosmeticSprite
     static int lastsecond; // try not to get color jumps on pause/resume
     public static float baseSizeVar = 0.35f;
 
+    public static bool onlyZs = false;
+
     // based on public class LizardBubble : CosmeticSprite
     public Zs(Vector2 pos, Vector2 vel, int facing, Color col)
     {
@@ -38,12 +40,13 @@ public class Zs : CosmeticSprite
         base.vel = vel;
         this.color = col;
         rotation = (System.Math.Abs(vel.x) * 10f) * facing * 30f;
+        
     }
 
 
     public override void AddToContainer(RoomCamera.SpriteLeaser sLeaser, RoomCamera rCam, FContainer newContatiner)
     {
-        base.AddToContainer(sLeaser, rCam, rCam.ReturnFContainer("HUD"));
+        base.AddToContainer(sLeaser, rCam, rCam.ReturnFContainer("Items"));
     }
     public override void ApplyPalette(RoomCamera.SpriteLeaser sLeaser, RoomCamera rCam, RoomPalette palette)
     {
@@ -55,7 +58,7 @@ public class Zs : CosmeticSprite
         for (int i = 0; i < text.Length; i++)
         {
             float dx = System.Math.Abs(lastPos.x);
-            sLeaser.sprites[i].rotation = (text.Length != 1 || text.ToLower().All((el) => el == 'z')) ? 0f : rotation;
+            sLeaser.sprites[i].rotation = (text.Length != 1 || !onlyZs) ? 0f : rotation;
             sLeaser.sprites[i].scale = size * 0.45f;
             sLeaser.sprites[i].x = Mathf.Lerp(lastPos.x, pos.x, timeStacker) - camPos.x + i * sLeaser.sprites[i].scale * 13.5f;
             dx -= sLeaser.sprites[i].x;
@@ -118,6 +121,8 @@ public class Zs : CosmeticSprite
     {
         sLeaser.sprites = new FSprite[text.Length];
 
+        if (!onlyZs) {
+
         for (int i = 0; i < text.Length; i++)
         {
             string c = text[i].ToString();
@@ -132,7 +137,21 @@ public class Zs : CosmeticSprite
             sLeaser.sprites[i].color = color;
 
         }
+} else {
+    for (int i = 0; i < text.Length; i++)
+        {
 
+            if (!Futile.atlasManager.DoesContainElementWithName("Zs"))
+            { //this loads the image to atlas !
+                string targetPath = Path.Combine(Directory.GetParent(Path.GetFullPath(System.Reflection.Assembly.GetExecutingAssembly().Location)).Parent.FullName, "Zs");//UnityEngine.Application.streamingAssetsPath+"/mods/SleepySlugcat/Zs";
+                Futile.atlasManager.ActuallyLoadAtlasOrImage("Zs", targetPath, "");
+            }
+
+            sLeaser.sprites[i] = new FSprite("Zs");
+            sLeaser.sprites[i].color = color;
+
+        }
+}
 
 
         AddToContainer(sLeaser, rCam, null);

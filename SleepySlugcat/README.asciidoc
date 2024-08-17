@@ -7,9 +7,17 @@ Let the lil man sleep ! (with a supplement of Zzs)
 
 When you are in a calm place, take the time to sleep by holding down and relaxing.
 
-Comes with a bunch of options for your Zs color, size and the contents of the Zzs.
+ *   many colour types (custom, based on slugcat, random, rainbows ✨)
+  *  colour variation
+   * custom text (better quality if you only use Zs !)
+    * size variation
+    * quantity variation
 
-Supports multiple players !
+
+//-
+
+  *  Supports all game modes, most likely
+  *  Supports multiple players
 
 ## Steam install
 Visit https://steamcommunity.com/sharedfiles/filedetails/?id=3310861858 and click Subscribe
@@ -22,8 +30,5 @@ image::imagesForDescription/customText.png[]
 
 .In future upgrades, except :
 
-* Workshop release
 * Zs flow regulation
-* Specific high-quality Z for Zs only
-* Put Zs on same layer as slugcat
 * ???
