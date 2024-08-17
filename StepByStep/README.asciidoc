@@ -12,7 +12,7 @@ If you press other keys when stepping, the game will recieve them and act accord
 
 ## Install
 
-- Using Steam Workshop : go to https://steamcommunity.com/sharedfiles/filedetails/?id=3311130517 and click Subscribe
+- Using Steam Workshop : go to https://steamcommunity.com/sharedfiles/filedetails/?id=3311149960 and click Subscribe
 - Manually : Download the xref:https://codeberg.org/catsoft/RainWorldMods/raw/branch/main/StepByStep/StepByStep.zip[zip] and extract the wole zip to Rain World/RainWorld_Data/StreamingAssets/mods/StepByStep/ (your Rain World mods folder).
 
 ## Use cases
