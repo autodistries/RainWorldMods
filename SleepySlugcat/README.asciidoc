@@ -12,11 +12,14 @@ Comes with a bunch of options for your Zs color, size and the contents of the Zz
 Supports multiple players !
 
 
+Download the xref:SleepySlugcat.zip[zip] and extract the wole zip to Rain World/RainWorld_Data/StreamingAssets/mods/SleepySlugcat/ your Rain World mods folder.
+
+
 image::imagesForDescription/customText.png[]
 
 In future upgrades, except :
-- Workshop release
-- Zs flow regulation
-- Specific high-quality Z for Zs only
-- Put Zs on same layer as slugcat
-- ???
+* Workshop release
+* Zs flow regulation
+* Specific high-quality Z for Zs only
+* Put Zs on same layer as slugcat
+* ???
