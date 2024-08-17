@@ -1,17 +1,18 @@
+image::imagesForDescription/fimage.png[]
 
-image::imagesForDescription/overview.png[]
-image::imagesForDescription/modOptions.png[]
 
 
 Let the lil man sleep ! (with a supplement of Zzs)
 
 When you are in a calm place, take the time to sleep by holding down and relaxing.
 
+## Features
  *   many colour types (custom, based on slugcat, random, rainbows ✨)
   *  colour variation
    * custom text (better quality if you only use Zs !)
     * size variation
     * quantity variation
+    * quantity regulation
 
 
 //-
@@ -26,9 +27,12 @@ Visit https://steamcommunity.com/sharedfiles/filedetails/?id=3310861858 and clic
 Download the xref:https://codeberg.org/catsoft/RainWorldMods/raw/branch/main/SleepySlugcat/SleepySlugcat.zip[zip] and extract the wole zip to Rain World/RainWorld_Data/StreamingAssets/mods/SleepySlugcat/ your Rain World mods folder.
 
 
-image::imagesForDescription/customText.png[]
+## In future upgrades, except :
 
-.In future upgrades, except :
-
-* Zs flow regulation
 * ???
+
+## Gallery
+
+image::imagesForDescription/customText.png[]
+image::imagesForDescription/overview.png[]
+image::imagesForDescription/modOptions.png[]

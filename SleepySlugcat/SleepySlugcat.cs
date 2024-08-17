@@ -5,6 +5,7 @@ using UnityEngine;
 using System.Collections.Generic;
 using System;
 using System.Linq;
+using System.Drawing.Text;
 
 
 namespace SleepySlugcat;
@@ -25,6 +26,7 @@ public partial class SleepySlugcatto : BaseUnityPlugin
     List<ThreatDetermination> currentThreat = new();
     public string colorMode = "random";
     private bool singleZs = false;
+    private List<int> updatesSinceLastZPopped = new();
 
     private Dictionary<int, int> playerNumberEquivalent = new(); // because they could choose White and Red (0 and 2)
 
@@ -85,6 +87,8 @@ public partial class SleepySlugcatto : BaseUnityPlugin
                 currentThreat[i].Update(self.abstractCreature.world.game);
                 threatLabel.Add(null);
                 LocalLogSource.LogInfo("ok for p no "+i);
+                updatesSinceLastZPopped.Add(0);
+
             }
         }
 
@@ -94,7 +98,13 @@ public partial class SleepySlugcatto : BaseUnityPlugin
 
         if (sleeping[translatedPlayerNumber(self.slugcatStats.name.Index)])
         {
-            if (!singleZs) showZs(self);
+            if (!singleZs) {
+                if (showZs(self)) {
+                    updatesSinceLastZPopped[translatedPlayerNumber(self.slugcatStats.name.Index)] = 0;
+                } else {
+                    updatesSinceLastZPopped[translatedPlayerNumber(self.slugcatStats.name.Index)]++;
+                }
+            }
         }
         if (sleeping[translatedPlayerNumber(self.slugcatStats.name.Index)] &&
         (wakeUp[translatedPlayerNumber(self.slugcatStats.name.Index)] || self.input[translatedPlayerNumber(self.slugcatStats.name.Index)].y > 0 || self.input[translatedPlayerNumber(self.slugcatStats.name.Index)].x != 0 || self.input[translatedPlayerNumber(self.slugcatStats.name.Index)].jmp
@@ -251,7 +261,7 @@ public partial class SleepySlugcatto : BaseUnityPlugin
     /// <returns>true if Z was summonned</returns>
     private bool showZs(Player self)
     {
-        if (UnityEngine.Random.value < (0.005 + modOptions.ZsQtyVarianceConfigurable.Value*0.015))
+        if (updatesSinceLastZPopped[translatedPlayerNumber(self.slugcatStats.name.Index)] > 160 || UnityEngine.Random.value < (0.005 + modOptions.ZsQtyVarianceConfigurable.Value*0.015) && updatesSinceLastZPopped[translatedPlayerNumber(self.slugcatStats.name.Index)] > 25 - modOptions.ZsQtyVarianceConfigurable.Value * 10)
         {
             //  if (Zs.text != modOptions.Zs)
             if (Zs.decayEnabled != modOptions.ZsColorIsDecayOnConfigurable.Value) Zs.decayEnabled = modOptions.ZsColorIsDecayOnConfigurable.Value;

@@ -2,6 +2,7 @@ using System.IO;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Net;
+using System.Runtime.Remoting.Lifetime;
 using System.Runtime.Serialization.Configuration;
 using UnityEngine;
 namespace SleepySlugcat;
@@ -26,6 +27,7 @@ public class Zs : CosmeticSprite
     public static float baseSizeVar = 0.35f;
 
     public static bool onlyZs = false;
+    Vector2 HQdxy = new();
 
     // based on public class LizardBubble : CosmeticSprite
     public Zs(Vector2 pos, Vector2 vel, int facing, Color col)
@@ -40,7 +42,7 @@ public class Zs : CosmeticSprite
         base.vel = vel;
         this.color = col;
         rotation = (System.Math.Abs(vel.x) * 10f) * facing * 30f;
-        
+
     }
 
 
@@ -54,15 +56,28 @@ public class Zs : CosmeticSprite
     }
     public override void DrawSprites(RoomCamera.SpriteLeaser sLeaser, RoomCamera rCam, float timeStacker, Vector2 camPos)
     {
+            if (onlyZs) { HQdxy = new();}
 
         for (int i = 0; i < text.Length; i++)
         {
             float dx = System.Math.Abs(lastPos.x);
             sLeaser.sprites[i].rotation = (text.Length != 1 || !onlyZs) ? 0f : rotation;
-            sLeaser.sprites[i].scale = size * 0.45f;
-            sLeaser.sprites[i].x = Mathf.Lerp(lastPos.x, pos.x, timeStacker) - camPos.x + i * sLeaser.sprites[i].scale * 13.5f;
+            sLeaser.sprites[i].scale = size * 0.45f * (onlyZs && text[i]==122 ? 0.75f  : 1.0f);
+            sLeaser.sprites[i].x = Mathf.Lerp(lastPos.x, pos.x, timeStacker) - camPos.x + i * sLeaser.sprites[i].scale * (13.5f ) + HQdxy.x;
             dx -= sLeaser.sprites[i].x;
             sLeaser.sprites[i].y = Mathf.Lerp(lastPos.y, pos.y, timeStacker) - camPos.y - facingTowards * i * 1.24f * (float)System.Math.Cos(rotation) * sLeaser.sprites[i].scale;
+            if (onlyZs) {
+                if (text[i] == 90 ) /* Z */ {
+                    if (i!=text.Length-1 && text[i+1] == 122) {
+                        HQdxy.x += sLeaser.sprites[i].scale *7.0f;
+                    }
+                    if (i!=0 && text[i-1] == 122) {
+                        HQdxy.x -= sLeaser.sprites[i].scale *7.0f * (1f+HQdxy.y);
+                    }
+                    HQdxy.y = 0f;
+                } else HQdxy.y+=1.0f;
+                
+            }
         }
 
 
@@ -121,37 +136,40 @@ public class Zs : CosmeticSprite
     {
         sLeaser.sprites = new FSprite[text.Length];
 
-        if (!onlyZs) {
-
-        for (int i = 0; i < text.Length; i++)
-        {
-            string c = text[i].ToString();
-            c = translateSymbols(c);
-            if (!Futile.atlasManager.DoesContainElementWithName("lettre-" + c))
-            { //this loads the image to atlas !
-                string targetPath = Path.Combine(Directory.GetParent(Path.GetFullPath(System.Reflection.Assembly.GetExecutingAssembly().Location)).Parent.FullName, "images", "lettre-" + c);//UnityEngine.Application.streamingAssetsPath+"/mods/SleepySlugcat/Zs";
-                Futile.atlasManager.ActuallyLoadAtlasOrImage("lettre-" + c, targetPath, "");
-            }
-
-            sLeaser.sprites[i] = new FSprite("lettre-" + c);
-            sLeaser.sprites[i].color = color;
-
-        }
-} else {
-    for (int i = 0; i < text.Length; i++)
+        if (!onlyZs)
         {
 
-            if (!Futile.atlasManager.DoesContainElementWithName("Zs"))
-            { //this loads the image to atlas !
-                string targetPath = Path.Combine(Directory.GetParent(Path.GetFullPath(System.Reflection.Assembly.GetExecutingAssembly().Location)).Parent.FullName, "Zs");//UnityEngine.Application.streamingAssetsPath+"/mods/SleepySlugcat/Zs";
-                Futile.atlasManager.ActuallyLoadAtlasOrImage("Zs", targetPath, "");
+            for (int i = 0; i < text.Length; i++)
+            {
+                string c = text[i].ToString();
+                c = translateSymbols(c);
+                if (!Futile.atlasManager.DoesContainElementWithName("lettre-" + c))
+                { //this loads the image to atlas !
+                    string targetPath = Path.Combine(Directory.GetParent(Path.GetFullPath(System.Reflection.Assembly.GetExecutingAssembly().Location)).Parent.FullName, "images", "lettre-" + c);//UnityEngine.Application.streamingAssetsPath+"/mods/SleepySlugcat/Zs";
+                    Futile.atlasManager.ActuallyLoadAtlasOrImage("lettre-" + c, targetPath, "");
+                }
+
+                sLeaser.sprites[i] = new FSprite("lettre-" + c);
+                sLeaser.sprites[i].color = color;
+
             }
-
-            sLeaser.sprites[i] = new FSprite("Zs");
-            sLeaser.sprites[i].color = color;
-
         }
-}
+        else
+        {
+            for (int i = 0; i < text.Length; i++)
+            {
+
+                if (!Futile.atlasManager.DoesContainElementWithName("Zs"))
+                { //this loads the image to atlas !
+                    string targetPath = Path.Combine(Directory.GetParent(Path.GetFullPath(System.Reflection.Assembly.GetExecutingAssembly().Location)).Parent.FullName, "Zs");//UnityEngine.Application.streamingAssetsPath+"/mods/SleepySlugcat/Zs";
+                    Futile.atlasManager.ActuallyLoadAtlasOrImage("Zs", targetPath, "");
+                }
+
+                sLeaser.sprites[i] = new FSprite("Zs");
+                sLeaser.sprites[i].color = color;
+
+            }
+        }
 
 
         AddToContainer(sLeaser, rCam, null);
