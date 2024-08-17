@@ -1,8 +1,9 @@
 <Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
         <PluginID>"nope.sleepyslugcat"</PluginID>
-        <Product>Sleepy Slugcat</Product>
-        <Version>2.1</Version>
+        <Product>"Sleepy Slugcat"</Product>
+        <Version>2.2</Version>
+        <ModDesc>"Let the lil man sleep ! (with a supplement of Zzs)\nWhen you are in a calm place, take the time to sleep by holding down and relaxing.\nComes with a bunch of options for your Zs color, size and the contents of the Zzs."</ModDesc>
         <TargetFramework>net48</TargetFramework>
         <LangVersion>11</LangVersion>
         <OutDir>./$(AssemblyName)/plugins/</OutDir>
@@ -54,12 +55,11 @@
  <PropertyGroup>
             <ModinfoGeneric><![CDATA[
   {
-    "id"%3A "mod.id",
-    "name"%3A "mod name",
-    "version"%3A "mod version",
+    "id"%3A $(PluginID),
+    "name"%3A $(Product),
+    "version"%3A $(Version),
     "authors"%3A "Nope",
-    "description"%3A "
-Let the lil man sleep ! (with a supplement of Zzs)\nWhen you are in a calm place, take the time to sleep by holding down and relaxing.\nComes with a bunch of options for your Zs color, size and the contents of the Zzs.",
+    "description"%3A $(ModDesc),
     "requirements"%3A [],
     "requirements_names"%3A [],
     "checksum_override_version"%3A true
@@ -69,20 +69,19 @@ Let the lil man sleep ! (with a supplement of Zzs)\nWhen you are in a calm place
                 </PropertyGroup>
 
 
-        <WriteLinesToFile Lines="$(modinfoGeneric)"
+        <WriteLinesToFile Lines="$(ModinfoGeneric)"
                               File="./$(AssemblyName)/modinfo.json"
-                              WriteOnlyWhenDifferent="true"
                               Overwrite="true" 
-                              Condition="!Exists('./$(AssemblyName)/modinfo.json')"
+                              Condition="Exists('./$(AssemblyName)')"
                               />
-        <Exec command='sed -i "s/\"id\": \".*\"/\"id\": \"$(PluginID)\"/" ./$(AssemblyName)/modinfo.json' />
-        <Exec command='sed -i "s/\"name\": \".*\"/\"name\": \"$(Product)\"/" ./$(AssemblyName)/modinfo.json' />
-        <Exec command='sed -i "s/\"version\": \".*\"/\"version\": \"$(Version)\"/" ./$(AssemblyName)/modinfo.json' />
+
         <Exec command='echo Updated ./$(AssemblyName)/modinfo.json' />
 
 
    
         <Exec Command="cp -r ./$(AssemblyName) '$(RWDir)'RainWorld_Data/StreamingAssets/mods/; echo 'Copied mod data to Rain World mods folder'"
+              Condition="'$(OS)' == 'Unix'" />
+        <Exec Command="zip -r ./$(AssemblyName) ./$(AssemblyName); echo 'Zipped mod to cwd'"
               Condition="'$(OS)' == 'Unix'" />
     </Target>
 
@@ -102,7 +101,7 @@ namespace $(RootNamespace)
     public static class PluginInfo
     {
         public const string PLUGIN_GUID = $(BepInExPluginGuid)%3B
-        public const string PLUGIN_NAME = "$(BepInExPluginName)"%3B
+        public const string PLUGIN_NAME = $(BepInExPluginName)%3B
         public const string PLUGIN_VERSION = "$(BepInExPluginVersion)"%3B
     }
 }
