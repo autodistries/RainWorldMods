@@ -1,0 +1,16 @@
+image::StepByStep/thumbnail.png[]
+
+
+# Step By Step
+This mod lets you stop the game and run it frame by frame.
+
+## Controls
+By default, press P to pause and L to step forwards. You can hold L to do chain multiple steps. Press P again to resume the game normally.
+You can configure keybinds and chain speed in the remix menu.
+If you press other keys when stepping, the game will recieve them and act accordingly.
+
+## Use cases
+Possible use cases include analyzing a situation before reacting, debugging at what frame/action your mod does not work, or practising/performing movment tech at a frame-level precision.
+
+## Plans
+- A tool to fake inputs to be frame perfect ? Maybe one that records these imputs ? Or in another mod ? 
