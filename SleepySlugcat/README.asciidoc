@@ -11,8 +11,11 @@ Comes with a bunch of options for your Zs color, size and the contents of the Zz
 
 Supports multiple players !
 
+## Steam install
+Visit https://steamcommunity.com/sharedfiles/filedetails/?id=3310861858 and click Subscribe
 
-Download the xref:SleepySlugcat.zip[zip] and extract the wole zip to Rain World/RainWorld_Data/StreamingAssets/mods/SleepySlugcat/ your Rain World mods folder.
+## Manual install
+Download the xref:https://codeberg.org/catsoft/RainWorldMods/raw/branch/main/SleepySlugcat/SleepySlugcat.zip[zip] and extract the wole zip to Rain World/RainWorld_Data/StreamingAssets/mods/SleepySlugcat/ your Rain World mods folder.
 
 
 image::imagesForDescription/customText.png[]
