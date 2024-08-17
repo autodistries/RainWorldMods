@@ -17,4 +17,5 @@ image::customText.png[]
 In future upgrades, except :
 - Workshop release
 - Zs flow regulation
+- Specific high-quality Z for Zs only
 - ???
