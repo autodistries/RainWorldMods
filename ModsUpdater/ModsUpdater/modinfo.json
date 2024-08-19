@@ -1,0 +1,10 @@
+{
+    "id": "nope.modsupdater",
+    "name": "Mods Updater",
+    "version": "0.0.1",
+    "authors": "Nope",
+    "description": "gescription with a g",
+    "requirements": [],
+    "requirements_names": [],
+    "checksum_override_version": true
+  }

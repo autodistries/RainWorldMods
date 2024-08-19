@@ -1,0 +1,87 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <!-- This is the place where you input mod data ! 
+        Other files will get updated based on that.
+        Put whatever you want inside here : -->
+        <PluginID>"nope.modsupdater"</PluginID>
+        <Product>Mods Updater</Product>
+        <Version>0.0.1</Version>
+
+        <TargetFramework>net48</TargetFramework>
+        <LangVersion>11</LangVersion>
+
+        <!-- These are variables we'll use inside this file -->
+        <OutDir>./$(AssemblyName)/plugins</OutDir> <!-- where the compiled mod will be placed -->
+        <RWDir>$(HOME)/.local/share/Steam/steamapps/common/Rain World/</RWDir> <!-- The path where your Rain World executable is stored -->
+        <LocalLibsDir>./libs/</LocalLibsDir> <!-- The path where you can put local libs. You won't need that for most projects -->
+
+        <!-- This is for outputting pdb files -->
+        <DebugSymbols>False</DebugSymbols>
+        <DebugType>None</DebugType>
+    </PropertyGroup>
+   
+
+   <!-- This group fetches every dll from the game & from BepInEx -->
+    <ItemGroup>
+        <Reference Include="$(RWDir)RainWorld_Data/Managed/*.dll">
+            <Private>false</Private>
+        </Reference>
+        <Reference Include="$(RWDir)BepInEx/*/*.dll">
+        <Private>false</Private>
+        </Reference>
+
+    </ItemGroup>
+   
+    <!-- This event writes off the modinfo.json file, then copies the whole mod to the mods folder -->
+    <Target Name="PostBuild" AfterTargets="PostBuildEvent">
+        <PropertyGroup>
+            <ModinfoGeneric><![CDATA[
+  {
+    "id"%3A "mod.id",
+    "name"%3A "mod name",
+    "version"%3A "mod version",
+    "authors"%3A "Nope",
+    "description"%3A "gescription with a g",
+    "requirements"%3A [],
+    "requirements_names"%3A [],
+    "checksum_override_version"%3A true
+  }
+
+        ]]></ModinfoGeneric>
+        </PropertyGroup>
+        <WriteLinesToFile Lines="$(modinfoGeneric)" File="./$(AssemblyName)/modinfo.json" WriteOnlyWhenDifferent="true" Overwrite="true" Condition="Exists('./$(AssemblyName)')" />
+        <Exec command="sed -i &quot;s/\&quot;id\&quot;: \&quot;.*\&quot;/\&quot;id\&quot;: \&quot;$(PluginID)\&quot;/&quot; ./$(AssemblyName)/modinfo.json" />
+        <Exec command="sed -i &quot;s/\&quot;name\&quot;: \&quot;.*\&quot;/\&quot;name\&quot;: \&quot;$(Product)\&quot;/&quot; ./$(AssemblyName)/modinfo.json" />
+        <Exec command="sed -i &quot;s/\&quot;version\&quot;: \&quot;.*\&quot;/\&quot;version\&quot;: \&quot;$(Version)\&quot;/&quot; ./$(AssemblyName)/modinfo.json" />
+        <Exec command="echo Updated ./$(AssemblyName)/modinfo.json" />
+        <Exec command="# rm -rf '$(RWDir)'RainWorld_Data/StreamingAssets/mods/$(AssemblyName); echo cleared old mod copy" />
+        <Exec Command="cp -r ./$(AssemblyName) '$(RWDir)'RainWorld_Data/StreamingAssets/mods/; echo 'Copied mod data to Rain World mods folder'" Condition="'$(OS)' == 'Unix'" />
+    </Target>
+
+
+
+    <!-- This action fills the PluginInfo.cs with the info on top of this document-->
+    <Target Name="AddGeneratedFile" BeforeTargets="BeforeCompile;CoreCompile" Inputs="./" Outputs="./PluginInfo.cs">
+        <PropertyGroup>
+            <BepInExPluginGuid>$(PluginID)</BepInExPluginGuid>
+            <BepInExPluginName>$(Product)</BepInExPluginName>
+            <BepInExPluginVersion>$(Version)</BepInExPluginVersion>
+            <GeneratedText><![CDATA[
+namespace $(RootNamespace)
+{
+    public static class PluginInfo
+    {
+        public const string PLUGIN_GUID = $(BepInExPluginGuid)%3B
+        public const string PLUGIN_NAME = "$(BepInExPluginName)"%3B
+        public const string PLUGIN_VERSION = "$(BepInExPluginVersion)"%3B
+    }
+}
+      ]]></GeneratedText>
+            <GeneratedFilePath>./PluginInfo.cs</GeneratedFilePath>
+        </PropertyGroup>
+        <ItemGroup>
+            <Compile Include="$(GeneratedFilePath)" />
+        </ItemGroup>
+        <WriteLinesToFile Lines="$(GeneratedText)" File="$(GeneratedFilePath)" WriteOnlyWhenDifferent="false" Overwrite="true" />
+    </Target>
+</Project>
