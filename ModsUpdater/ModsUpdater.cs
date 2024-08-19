@@ -6,11 +6,10 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using static ModsUpdater.PluginInfo;
-using System.Net.Http;
 using System.Threading.Tasks;
-using Sony.NP;
 using System.Text.RegularExpressions;
-using System.Runtime.InteropServices;
+using System.Net.Http;
+using UnityEngine;
 namespace ModsUpdater;
 
 [BepInPlugin(PLUGIN_GUID, PLUGIN_NAME, PLUGIN_VERSION)]
@@ -29,13 +28,13 @@ public partial class ModsUpdater : BaseUnityPlugin
     static bool done = false;
 
     ModOptions modOptions;
+    OpTab savedOpTab;
 
 
 
     public ModsUpdater()
     {
         lls = base.Logger;
-        lls.LogInfo("We're here");
 
         modOptions = new ModOptions(this, lls);
 
@@ -71,16 +70,74 @@ public partial class ModsUpdater : BaseUnityPlugin
         }
     }
 
-
+    // ConfigMenuTab configMenuTab = new();
+    // List<ModButton> modButtons = new();
     public void SetUpOptionsSettings()
     {
+        /*menuTab = new ConfigMenuTab();*/
+        // modButtons.Add(new ModButton(configMenuTab.modList, 0));
         lls.LogDebug("3.5");
         modOptions.AddButtonOption(40, "load local mods", loadLocalMods);
         modOptions.AddButtonOption(80, "list local mods", listLocalMods);
         modOptions.AddButtonOption(120, "download remote", downloadRemoteModsList);
         modOptions.AddButtonOption(160, "load server mods", loadServerMods);
-        modOptions.AddButtonOption(200, "load server mods", tryToUpdateFirstMod);
+        modOptions.AddButtonOption(200, "dl first mod", tryToUpdateFirstMod);
+        modOptions.AddButtonOption(240, "summon new tab", tryToCreateTab2);
+        modOptions.AddButtonOption(280, "modOptions.ResetUIelements", trytoaaa);
+        modOptions.AddButtonOption(320, "modOptions. manual reset !!", trytobbb);
+        modOptions.AddButtonOption(360, "summon OpScrollBox", trytoopscrollbox);
         lls.LogDebug("3.6");
+        /*if (ConfigContainer.menuTab.modList.GetModButton(ModManager.InstalledMods[i].id) == null)*/
+        /*sortedModButtons.AddRange(list);*/
+    }
+
+    private void trytoopscrollbox(UIfocusable trigger)
+    {
+       OpScrollBox opScrollBox = new OpScrollBox(new Vector2(30f, 80f), new Vector2(250f, 450f), 25f, false, true, true);
+       modOptions.Tabs[0].AddItems(opScrollBox);
+       /* In the end we need:
+       a button to update all available
+       a button & text for update and info abt raindb.js*/
+    }
+
+    private void trytobbb(UIfocusable trigger)
+    {
+        OpTab[] tabs = modOptions.Tabs;
+		for (int i = 0; i < tabs.Length; i++)
+		{
+			foreach (UIelement item in tabs[i].items)
+			{
+				if (item is UIconfig && (item as UIconfig).cosmetic)
+				{
+					item.Reset();
+				}
+			}
+		}
+    }
+
+    private void trytoaaa(UIfocusable trigger)
+    {
+                modOptions.ResetUIelements();
+
+    }
+
+    private void tryToCreateTab2(UIfocusable trigger)
+    {
+        var opTab = new Menu.Remix.MixedUI.OpTab(modOptions, "Test");
+        savedOpTab = modOptions.Tabs[0];
+        modOptions.Tabs = new[]
+        {
+            opTab
+        };
+
+        UIelement[] UIArrPlayerOptions = new UIelement[]
+        {
+            new OpLabel(10f, 550f, "Mods Updater", true),
+        };
+        lls.LogDebug(2);
+
+
+        opTab.AddItems(UIArrPlayerOptions);
     }
 
     private async void tryToUpdateFirstMod(UIfocusable trigger)
@@ -137,7 +194,10 @@ public partial class ModsUpdater : BaseUnityPlugin
         }
     }
 
-
+/// <summary>
+/// WE NEED TO IGNORE STEAMWORKS MODS!!
+/// </summary>
+/// <param name="focusable"></param>
     public void loadLocalMods(UIfocusable focusable)
     {
 
@@ -161,7 +221,6 @@ public partial class ModsUpdater : BaseUnityPlugin
             return;
         }
         string[] lines = File.ReadAllLines(Path.Combine(THISMODPATH, "raindb.js"));
-        ServerMod currentWorkingMod;
         string currentWorkingID = "";
         string currentWorkingVersion = "";
         string currentWorkingLink = "";
@@ -182,7 +241,6 @@ public partial class ModsUpdater : BaseUnityPlugin
                 currentWorkingID = "undefined";
                 currentWorkingLink = "undefined";
                 currentWorkingVersion = "undefined";
-                currentWorkingMod = null;
             }
             else if (line == "") continue;
             else if (line == "});")

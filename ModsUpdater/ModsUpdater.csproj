@@ -23,12 +23,18 @@
 
    <!-- This group fetches every dll from the game & from BepInEx -->
     <ItemGroup>
-        <Reference Include="$(RWDir)RainWorld_Data/Managed/*.dll">
-            <Private>false</Private>
-        </Reference>
         <Reference Include="$(RWDir)BepInEx/*/*.dll">
         <Private>false</Private>
         </Reference>
+        <reference Include="$(RWDir)RainWorld_Data/Managed/UnityEngine.dll"> <private>false</private> </reference>
+        <reference Include="$(RWDir)RainWorld_Data/Managed/UnityEngine.CoreModule.dll"> <private>false</private> </reference>
+        <reference Include="$(RWDir)BepInEx/patchers/*.dll"> <private>false</private> </reference>
+        <reference Include="$(RWDir)BepInEx/plugins/*.dll"> <private>false</private> </reference>
+        <reference Include="$(RWDir)BepInEx/utils/PUBLIC-Assembly-CSharp.dll"> <private>false</private> </reference>
+        <reference Include="$(RWDir)RainWorld_Data/Managed/System.Net.Http.dll"> <private>false</private> </reference>
+        <!-- <Reference Include="$(RWDir)RainWorld_Data/Managed/*.dll" Exclude="$(RWDir)RainWorld_Data/Managed/Assembly-CSharp.dll">
+            <Private>false</Private>
+        </Reference> -->
 
     </ItemGroup>
    

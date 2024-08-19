@@ -94,7 +94,7 @@ public class ModOptions : OptionInterface
         {
                     lls.LogDebug(7);
 
-            float num2 = 20f;
+            float num2 = 300;
             float num3 = 550f;
             OpSimpleButton opSimpleButton = new OpSimpleButton(new Vector2(num2, num3 - num), new Vector2(170f, 36f), text) {
                 description = text,
