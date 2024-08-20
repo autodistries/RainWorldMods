@@ -5,3 +5,9 @@ SleepySlugcat : adds cosmetics for sleeping
 StepByStep : pause the game and continue one frame at a time
 
 Mods Updater: an off-steam mods updater
+
+
+### Plans
+- (mod) TAS recording and replaying tool
+- (SleepySlugcat) better Z quality, music silence
+- Mods downloader
