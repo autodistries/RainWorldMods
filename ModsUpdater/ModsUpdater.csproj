@@ -59,9 +59,13 @@
         <Exec command="sed -i &quot;s/\&quot;id\&quot;: \&quot;.*\&quot;/\&quot;id\&quot;: \&quot;$(PluginID)\&quot;/&quot; ./$(AssemblyName)/modinfo.json" />
         <Exec command="sed -i &quot;s/\&quot;name\&quot;: \&quot;.*\&quot;/\&quot;name\&quot;: \&quot;$(Product)\&quot;/&quot; ./$(AssemblyName)/modinfo.json" />
         <Exec command="sed -i &quot;s/\&quot;version\&quot;: \&quot;.*\&quot;/\&quot;version\&quot;: \&quot;$(Version)\&quot;/&quot; ./$(AssemblyName)/modinfo.json" />
-        <Exec command="echo Updated ./$(AssemblyName)/modinfo.json" />
+        <Exec command="echo Updated ./$(AssemblyName)/modinfo.json" />   
+
         <Exec command="# rm -rf '$(RWDir)'RainWorld_Data/StreamingAssets/mods/$(AssemblyName); echo cleared old mod copy" />
         <Exec Command="cp -r ./$(AssemblyName) '$(RWDir)'RainWorld_Data/StreamingAssets/mods/; echo 'Copied mod data to Rain World mods folder'" Condition="'$(OS)' == 'Unix'" />
+             <Exec command="kill -2 $(ps -A | grep RainWorld | awk '{print $1}') | echo 0" />
+             <Exec command="env STEAM_COMPAT_DATA_PATH=/home/guigui/.local/share/Steam/steamapps/compatdata/312520 STEAM_COMPAT_CLIENT_INSTALL_PATH=/home/guigui/.local/share/Steam/steamapps/compatdata WINEDLLOVERRIDES=winhttp=n,b '/home/guigui/.local/share/Steam/steamapps/common/Proton 8.0/proton' waitforexitandrun '/home/guigui/.local/share/Steam/steamapps/common/Rain World/RainWorld.exe' &amp;" />
+             
     </Target>
 
 
