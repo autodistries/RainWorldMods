@@ -20,3 +20,5 @@ for a in *.png
     end;   end
     end
     end
+
+    for img in ./*.png; convert $img -alpha extract -threshold 0  -transparent black $img; end
