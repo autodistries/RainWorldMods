@@ -139,7 +139,10 @@ public class ModOptions : OptionInterface
         };
 
         OpLabel TextContentOpLabel = new OpLabel(decalagex, DecalageY(), "Custom z text", false);
-        usableOpTextContentTextBox = new(ZsTextContentConfigurable, new Vector2(120f, DecalageY(true)), 150f);
+        usableOpTextContentTextBox = new OpTextBox(ZsTextContentConfigurable, new Vector2(120f, DecalageY(true)), 150f) {
+            allowSpace = true,
+            accept = OpTextBox.Accept.StringASCII,
+        };
 
         OpLabel sizeVarianceOpLabel = new OpLabel(decalagex, DecalageY(), "Size diff of the Zs", false);
         usableOpSizeVarianceSlider = new(ZsSizeVarianceConfigurable, new Vector2(120f, DecalageY(true) - 3f), 200)
