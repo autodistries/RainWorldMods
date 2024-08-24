@@ -235,6 +235,13 @@ public partial class SleepySlugcatto : BaseUnityPlugin
     private void ResetDebuggingView(On.RainWorldGame.orig_ctor orig, RainWorldGame self, ProcessManager manager)
     {
         orig(self, manager);
+        Zs.decayEnabled = modOptions.ZsColorIsDecayOnConfigurable.Value;
+                    Zs.musician = modOptions.ZsIsSlugcatMusicianOnConfigurable.Value;
+                    Zs.text = modOptions.ZsTextContentConfigurable.Value; 
+                    Zs.onlyZs = Zs.text.ToLower().All((el) => el == 'z');
+                    if (Zs.musician) Zs.text = "s";
+            Zs.baseSizeVar = modOptions.ZsSizeVarianceConfigurable.Value;
+
         if (sleeping.Count != 0)
         {
             LocalLogSource.LogInfo("clearing variables");
@@ -263,12 +270,9 @@ public partial class SleepySlugcatto : BaseUnityPlugin
     {
         if (updatesSinceLastZPopped[translatedPlayerNumber(self.slugcatStats.name.Index)] > 160 || UnityEngine.Random.value < (0.005 + modOptions.ZsQtyVarianceConfigurable.Value*0.015) && updatesSinceLastZPopped[translatedPlayerNumber(self.slugcatStats.name.Index)] > 25 - modOptions.ZsQtyVarianceConfigurable.Value * 10)
         {
-            //  if (Zs.text != modOptions.Zs)
-            if (Zs.decayEnabled != modOptions.ZsColorIsDecayOnConfigurable.Value) Zs.decayEnabled = modOptions.ZsColorIsDecayOnConfigurable.Value;
-            if (Zs.text != modOptions.ZsTextContentConfigurable.Value) {Zs.text = modOptions.ZsTextContentConfigurable.Value; Zs.onlyZs = Zs.text.ToLower().All((el) => el == 'z');}
-
+          
+            LocalLogSource.LogDebug("musician:" + Zs.musician);
             // LocalLogSource.LogInfo("Spawning a bubble P" + translatedPlayerNumber(self.slugcatStats.name.Index) + " " + " " + self.forceSleepCounter + " " + self.sleepCurlUp + " " + self.sleepCounter + " mode: "+modOptions.ZsColorTypeConfigurable.Value + " rainbow:"+modOptions.ZsColorRainbowTypeConfigurable.Value);
-            Zs.baseSizeVar = modOptions.ZsSizeVarianceConfigurable.Value;
             self.room.AddObject(
                 new Zs(
                     self.bodyChunks[0].pos + RWCustom.Custom.DegToVec(UnityEngine.Random.value * 360f) * UnityEngine.Random.value * UnityEngine.Random.value * self.bodyChunks[0].rad + new Vector2((float)self.ThrowDirection * 2f, -2f),

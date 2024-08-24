@@ -27,6 +27,7 @@ public class Zs : CosmeticSprite
     public static float baseSizeVar = 0.35f;
 
     public static bool onlyZs = false;
+    public static bool musician = false;
     Vector2 HQdxy = new();
 
     // based on public class LizardBubble : CosmeticSprite
@@ -134,8 +135,24 @@ public class Zs : CosmeticSprite
     }
     public override void InitiateSprites(RoomCamera.SpriteLeaser sLeaser, RoomCamera rCam)
     {
-        sLeaser.sprites = new FSprite[text.Length];
+        sLeaser.sprites = new FSprite[(!musician) ? text.Length : 1];
 
+
+
+        if (musician) {
+            string targetSilence;
+            if (UnityEngine.Random.Range(0f, 1f) > 0.92) {
+                targetSilence = "short";
+            } else targetSilence = "regular";
+            if (!Futile.atlasManager.DoesContainElementWithName("silence-" + targetSilence))
+                { //this loads the image to atlas !
+                    string targetPath = Path.Combine(Directory.GetParent(Path.GetFullPath(System.Reflection.Assembly.GetExecutingAssembly().Location)).Parent.FullName, "images", "silence-" + targetSilence);//UnityEngine.Application.streamingAssetsPath+"/mods/SleepySlugcat/Zs";
+                    Futile.atlasManager.ActuallyLoadAtlasOrImage("silence-" + targetSilence, targetPath, "");
+                }
+
+                sLeaser.sprites[0] = new FSprite("silence-" + targetSilence);
+                sLeaser.sprites[0].color = color;
+        } else
         if (!onlyZs)
         {
 
@@ -154,8 +171,7 @@ public class Zs : CosmeticSprite
 
             }
         }
-        else
-        {
+         else {
             for (int i = 0; i < text.Length; i++)
             {
 

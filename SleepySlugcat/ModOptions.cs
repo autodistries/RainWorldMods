@@ -43,6 +43,9 @@ public class ModOptions : OptionInterface
     internal Configurable<string> ZsTextContentConfigurable;
     OpTextBox usableOpTextContentTextBox;
 
+    internal Configurable<bool> ZsIsSlugcatMusicianOnConfigurable;
+    OpCheckBox usableOpIsSlugcatMusicianCheckBox;
+
 
 
     private Menu.Remix.MixedUI.UIelement[] UIArrPlayerOptions;
@@ -89,6 +92,7 @@ public class ModOptions : OptionInterface
         ZsTextContentConfigurable = config.Bind("ZsTextContentConfigurable", "Z");
         ZsSizeVarianceConfigurable = config.Bind<float>("ZsSizeVarianceConfigurable", 0.40f, new ConfigAcceptableRange<float>(0f, 2f));
         ZsQtyVarianceConfigurable = config.Bind<float>("ZsQtyVarianceConfigurable", 0.40f, new ConfigAcceptableRange<float>(0f, 1f));
+        ZsIsSlugcatMusicianOnConfigurable = config.Bind<bool>("ZsIsSlugcatMusicianOnConfigurable", false);
 
     }
     public override void Initialize()
@@ -139,10 +143,14 @@ public class ModOptions : OptionInterface
         };
 
         OpLabel TextContentOpLabel = new OpLabel(decalagex, DecalageY(), "Custom z text", false);
-        usableOpTextContentTextBox = new OpTextBox(ZsTextContentConfigurable, new Vector2(120f, DecalageY(true)), 150f) {
+        usableOpTextContentTextBox = new OpTextBox(ZsTextContentConfigurable, new Vector2(120f, DecalageY(true)), 150f)
+        {
             allowSpace = true,
             accept = OpTextBox.Accept.StringASCII,
         };
+
+        OpLabel isSlugcatMusicianLabel = new OpLabel(decalagex + 120f + usableOpTextContentTextBox.size.x, DecalageY(true), "Is slugcat a musician");
+        usableOpIsSlugcatMusicianCheckBox = new OpCheckBox(ZsIsSlugcatMusicianOnConfigurable, new Vector2(330f + isSlugcatMusicianLabel.label.textRect.xMax, DecalageY(true)));
 
         OpLabel sizeVarianceOpLabel = new OpLabel(decalagex, DecalageY(), "Size diff of the Zs", false);
         usableOpSizeVarianceSlider = new(ZsSizeVarianceConfigurable, new Vector2(120f, DecalageY(true) - 3f), 200)
@@ -156,6 +164,16 @@ public class ModOptions : OptionInterface
         {
             description = "Determines how much Zs' there are"
         };
+        usableOpIsSlugcatMusicianCheckBox.OnValueUpdate += slugcatMusicianUpdate;
+
+        void slugcatMusicianUpdate(UIconfig config, string value, string oldValue)
+        {
+            if (value.ToLower() == "true")
+            {
+                usableOpTextContentTextBox.greyedOut = true;
+            }
+            else usableOpTextContentTextBox.greyedOut = false;
+        }
 
 
         usableColorTypeOpComboBox.OnValueUpdate += colorTypeUpdate;
@@ -235,6 +253,9 @@ public class ModOptions : OptionInterface
             TextContentOpLabel,
             usableOpTextContentTextBox,
 
+            isSlugcatMusicianLabel,
+            usableOpIsSlugcatMusicianCheckBox,
+
             sizeVarianceOpLabel,
             usableOpSizeVarianceSlider,
 
@@ -285,4 +306,6 @@ public class ModOptions : OptionInterface
 
         // }
     }
+
+
 }
