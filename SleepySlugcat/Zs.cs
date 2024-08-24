@@ -49,7 +49,7 @@ public class Zs : CosmeticSprite
 
     public override void AddToContainer(RoomCamera.SpriteLeaser sLeaser, RoomCamera rCam, FContainer newContatiner)
     {
-        base.AddToContainer(sLeaser, rCam, rCam.ReturnFContainer("Items"));
+        base.AddToContainer(sLeaser, rCam, rCam.ReturnFContainer("ForegroundLights"));
     }
     public override void ApplyPalette(RoomCamera.SpriteLeaser sLeaser, RoomCamera rCam, RoomPalette palette)
     {
@@ -67,7 +67,7 @@ public class Zs : CosmeticSprite
             sLeaser.sprites[i].x = Mathf.Lerp(lastPos.x, pos.x, timeStacker) - camPos.x + i * sLeaser.sprites[i].scale * (13.5f ) + HQdxy.x;
             dx -= sLeaser.sprites[i].x;
             sLeaser.sprites[i].y = Mathf.Lerp(lastPos.y, pos.y, timeStacker) - camPos.y - facingTowards * i * 1.24f * (float)System.Math.Cos(rotation) * sLeaser.sprites[i].scale;
-            if (onlyZs) {
+            if (onlyZs && !musician) {
                 if (text[i] == 90 ) /* Z */ {
                     if (i!=text.Length-1 && text[i+1] == 122) {
                         HQdxy.x += sLeaser.sprites[i].scale *7.0f;
@@ -141,7 +141,7 @@ public class Zs : CosmeticSprite
 
         if (musician) {
             string targetSilence;
-            if (UnityEngine.Random.Range(0f, 1f) > 0.92) {
+            if (UnityEngine.Random.Range(0f, 1f) > 0.965) {
                 targetSilence = "short";
             } else targetSilence = "regular";
             if (!Futile.atlasManager.DoesContainElementWithName("silence-" + targetSilence))
@@ -152,6 +152,7 @@ public class Zs : CosmeticSprite
 
                 sLeaser.sprites[0] = new FSprite("silence-" + targetSilence);
                 sLeaser.sprites[0].color = color;
+                sLeaser.sprites[0].scale = 0.92f;
         } else
         if (!onlyZs)
         {

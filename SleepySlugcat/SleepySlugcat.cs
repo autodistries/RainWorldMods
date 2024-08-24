@@ -271,7 +271,6 @@ public partial class SleepySlugcatto : BaseUnityPlugin
         if (updatesSinceLastZPopped[translatedPlayerNumber(self.slugcatStats.name.Index)] > 160 || UnityEngine.Random.value < (0.005 + modOptions.ZsQtyVarianceConfigurable.Value*0.015) && updatesSinceLastZPopped[translatedPlayerNumber(self.slugcatStats.name.Index)] > 25 - modOptions.ZsQtyVarianceConfigurable.Value * 10)
         {
           
-            LocalLogSource.LogDebug("musician:" + Zs.musician);
             // LocalLogSource.LogInfo("Spawning a bubble P" + translatedPlayerNumber(self.slugcatStats.name.Index) + " " + " " + self.forceSleepCounter + " " + self.sleepCurlUp + " " + self.sleepCounter + " mode: "+modOptions.ZsColorTypeConfigurable.Value + " rainbow:"+modOptions.ZsColorRainbowTypeConfigurable.Value);
             self.room.AddObject(
                 new Zs(
