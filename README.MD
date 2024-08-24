@@ -7,7 +7,9 @@ StepByStep : pause the game and continue one frame at a time
 Mods Updater: an off-steam mods updater
 
 
-### Plans
+.Plans
 - (mod) TAS recording and replaying tool
-- (SleepySlugcat) better Z quality, music silence
-- Mods downloader
+- Mods downloader :
+    - support for git sources
+    - on-mod preview update button
+- (mod) universal fan translation
