@@ -3,8 +3,8 @@
         <!-- This is the place where you input mod data ! 
         Other files will get updated based on that.
         Put whatever you want inside here : -->
-        <PluginID>"nope.modsupdater"</PluginID>
-        <Product>Mods Updater</Product>
+        <PluginID>"nope.modsupdater2"</PluginID>
+        <Product>Mods Updater (real)</Product>
         <Version>0.0.1</Version>
 
         <TargetFramework>net48</TargetFramework>
@@ -23,15 +23,16 @@
 
    <!-- This group fetches every dll from the game & from BepInEx -->
     <ItemGroup>
-        <Reference Include="$(RWDir)BepInEx/*/*.dll">
+        <Reference Include="./libs/*.dll">
         <Private>false</Private>
         </Reference>
-        <reference Include="$(RWDir)RainWorld_Data/Managed/UnityEngine.dll"> <private>false</private> </reference>
+        
+        <!-- <reference Include="$(RWDir)RainWorld_Data/Managed/UnityEngine.dll"> <private>false</private> </reference>
         <reference Include="$(RWDir)RainWorld_Data/Managed/UnityEngine.CoreModule.dll"> <private>false</private> </reference>
         <reference Include="$(RWDir)BepInEx/patchers/*.dll"> <private>false</private> </reference>
         <reference Include="$(RWDir)BepInEx/plugins/*.dll"> <private>false</private> </reference>
-        <reference Include="$(RWDir)BepInEx/utils/PUBLIC-Assembly-CSharp.dll"> <private>false</private> </reference>
-        <reference Include="$(RWDir)RainWorld_Data/Managed/System.Net.Http.dll"> <private>false</private> </reference>
+        <reference Include="/home/guigui/Downloads/PUBLIC-Assembly-CSharp.dll"> <private>false</private> </reference>
+        <reference Include="$(RWDir)RainWorld_Data/Managed/System.Net.Http.dll"> <private>false</private> </reference> -->
         <!-- <Reference Include="$(RWDir)RainWorld_Data/Managed/*.dll" Exclude="$(RWDir)RainWorld_Data/Managed/Assembly-CSharp.dll">
             <Private>false</Private>
         </Reference> -->
@@ -64,7 +65,7 @@
         <Exec command="# rm -rf '$(RWDir)'RainWorld_Data/StreamingAssets/mods/$(AssemblyName); echo cleared old mod copy" />
         <Exec Command="cp -r ./$(AssemblyName) '$(RWDir)'RainWorld_Data/StreamingAssets/mods/; echo 'Copied mod data to Rain World mods folder'" Condition="'$(OS)' == 'Unix'" />
              <Exec command="kill -2 $(ps -A | grep RainWorld | awk '{print $1}') | echo 0" />
-             <Exec command="env STEAM_COMPAT_DATA_PATH=/home/guigui/.local/share/Steam/steamapps/compatdata/312520 STEAM_COMPAT_CLIENT_INSTALL_PATH=/home/guigui/.local/share/Steam/steamapps/compatdata WINEDLLOVERRIDES=winhttp=n,b '/home/guigui/.local/share/Steam/steamapps/common/Proton 8.0/proton' waitforexitandrun '/home/guigui/.local/share/Steam/steamapps/common/Rain World/RainWorld.exe' &amp;" />
+             <!-- <Exec command="env STEAM_COMPAT_DATA_PATH=/home/guigui/.local/share/Steam/steamapps/compatdata/312520 STEAM_COMPAT_CLIENT_INSTALL_PATH=/home/guigui/.local/share/Steam/steamapps/compatdata WINEDLLOVERRIDES=winhttp=n,b '/home/guigui/.local/share/Steam/steamapps/common/Proton 8.0/proton' waitforexitandrun '/home/guigui/.local/share/Steam/steamapps/common/Rain World/RainWorld.exe' &amp;" /> -->
              
     </Target>
 

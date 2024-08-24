@@ -20,6 +20,7 @@ public static class Utils
         // Only supports . as a separator !
         public static bool IsVersionGreater(string a, string b)
         {
+            Console.WriteLine("Comparing "+a+" to "+b);
             if (a == null || b==null ||!CheckVersionValidity(a) || !CheckVersionValidity(b))
             {
 
@@ -41,7 +42,7 @@ public static class Utils
             return false;
         }
 
-        public static List<int> VersionToList(string a)
+        private static List<int> VersionToList(string a)
         {
             List<int> res = new();
             string[] splittedA = a.Split('.');
@@ -83,7 +84,7 @@ public static class Utils
         /// </summary>
         /// <param name="s"></param>
         /// <returns></returns>
-        public static bool CheckVersionValidity(string s)
+        private static bool CheckVersionValidity(string s)
         {
             if (s.Length==0) return false;
             for (int i = 0; i < s.Length; i++)

@@ -74,7 +74,6 @@ public class ModOptions : OptionInterface
         opTab.AddItems(UIArrPlayerOptions);
 
 
-        parent.SetUpOptionsSettings();
 
         modsContainer = await ModOptions.ModsContainer.CreateAsync(new Vector2(10f, 50f), new Vector2(350f, 470f), 0f, false, true);
         opTab.AddItems(modsContainer);
@@ -150,7 +149,7 @@ public class ModOptions : OptionInterface
     public class ModsContainer : OpScrollBox
     {
         public static List<ServerMod> serverMods = new();
-        public static List<LocalMod> localMods = new();
+        public static List<ServerMod> localMods = new();
         public static List<ServerMod> updatableMods = new();
 
 
@@ -209,7 +208,7 @@ public class ModOptions : OptionInterface
 
             foreach (ModManager.Mod mod in ModManager.InstalledMods)
             {
-                ModsContainer.localMods.Add(new LocalMod(mod.id, mod.version, mod.path));
+                ModsContainer.localMods.Add(new ServerMod(mod.id, mod.version, mod.path));
             }
 
             string url = "https://raw.githubusercontent.com/AndrewFM/RainDB/master/raindb.js";
