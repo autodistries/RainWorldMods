@@ -199,18 +199,40 @@ public static class Utils
 
         public static async Task<int> GetUpdateAndUnzip(string url, string modPath)
         {
+            if (url == null || modPath == null) return -3;
+            Console.WriteLine("1");
             if (!url.EndsWith("zip")) return -1;
+            Console.WriteLine("2");
+
             if (!(Directory.GetParent(Path.GetFullPath(modPath)).ToString() == ModsUpdater.MODSPATH))
             {
+            Console.WriteLine("3");
+
                 return -2;
             }
+            Console.WriteLine("4");
+
             string fileName = url.Split('/').Last();
+            Console.WriteLine("5");
+
             string tempFilePath = Path.Combine(ModsUpdater.THISMODPATH, "." + fileName);
+            Console.WriteLine("6");
+
             await DownloadFileAsync(url, tempFilePath);
+            Console.WriteLine("7");
+
             Console.WriteLine(ModsUpdater.MODSPATH);
+            Console.WriteLine("8");
+
             System.IO.Directory.Delete(modPath, true);
+            Console.WriteLine("9");
+
             System.IO.Directory.CreateDirectory(modPath);
+            Console.WriteLine("10");
+
             System.IO.Compression.ZipFile.ExtractToDirectory(tempFilePath, modPath);
+            Console.WriteLine("11");
+
             return 0;
         }
 

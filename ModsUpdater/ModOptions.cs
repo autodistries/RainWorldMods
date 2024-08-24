@@ -301,7 +301,7 @@ public class ModOptions : OptionInterface
             var tempModOpBtn = new OpModButton(this, serverMod, new(base.pos.x, currentBtnPosY), new(base.size.x - 5 * 6f, BTN_HEIGHT));
             if (CurrentContainerStatus == ContainerStatus.Update) {
                 tempModOpBtn.OnClick += (btn) => {
-                    Utils.FileManager.GetUpdateAndUnzip((btn as OpModButton).ModLink, (btn as OpModButton).ModPath);
+                    Utils.FileManager.GetUpdateAndUnzip((btn as OpModButton).ModLink, (btn as OpModButton).ModLink);
                 };
             }
             internalElements.Add(tempModOpBtn);
@@ -405,9 +405,7 @@ public class ModOptions : OptionInterface
 get => modRep.Link;
             }
 
-            public string ModPath  {
-get => modRep.Path;
-            }
+
 
 
 
