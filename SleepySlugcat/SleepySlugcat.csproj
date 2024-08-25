@@ -2,7 +2,7 @@
     <PropertyGroup>
         <PluginID>"nope.sleepyslugcat"</PluginID>
         <Product>"Sleepy Slugcat"</Product>
-        <Version>3.3</Version>
+        <Version>3.4</Version>
         <ModDesc>"Let the lil dude sleep ! With a supplement of Zzs&lt;LINE&gt;When you are in a calm place, take the time to sleep by holding down and relax.&lt;LINE&gt;Comes with a bunch of options for your Zs color, size and the contents of the Zzs.&lt;LINE&gt;&lt;LINE&gt;Make sure your slugcat feels safe and that they weil not fall into a hole while sleeping !"</ModDesc>
         <TargetFramework>net48</TargetFramework>
         <LangVersion>11</LangVersion>
