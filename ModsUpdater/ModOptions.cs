@@ -299,8 +299,10 @@ public class ModOptions : OptionInterface
             }
             shownMods.Add(serverMod);
             var tempModOpBtn = new OpModButton(this, serverMod, new(base.pos.x, currentBtnPosY), new(base.size.x - 5 * 6f, BTN_HEIGHT));
-            if (CurrentContainerStatus == ContainerStatus.Update) {
-                tempModOpBtn.OnClick += (btn) => {
+            if (CurrentContainerStatus == ContainerStatus.Update)
+            {
+                tempModOpBtn.OnClick += (btn) =>
+                {
                     Utils.FileManager.GetUpdateAndUnzip((btn as OpModButton).ModLink, (btn as OpModButton).ModLink);
                 };
             }
@@ -341,15 +343,16 @@ public class ModOptions : OptionInterface
                 localContentSize = 0f;
                 SetContentSize(0f);
                 shownMods.Clear();
-				internalElements.First().tab.RemoveItems(internalElements.ToArray());
+                internalElements.First().tab.RemoveItems(internalElements.ToArray());
 
-                foreach (var el in internalElements) {
+                foreach (var el in internalElements)
+                {
                     el.Hide();
-				    el.Unload();
+                    el.Unload();
                 }
                 internalElements.Clear();
                 items.Clear();
-                
+
 
 
                 if (containerStatus == ContainerStatus.Update)
@@ -401,8 +404,9 @@ public class ModOptions : OptionInterface
             ModStatus modStatus = ModStatus.None;
             private float MyPos => 275f + parent.size.y - parent.internalElements.Count * 30f;
 
-            public string ModLink  {
-get => modRep.Link;
+            public string ModLink
+            {
+                get => modRep.Link;
             }
 
 

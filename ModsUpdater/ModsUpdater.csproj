@@ -5,7 +5,7 @@
         Put whatever you want inside here : -->
         <PluginID>"nope.modsupdater2"</PluginID>
         <Product>Mods Updater (real)</Product>
-        <Version>0.0.1</Version>
+        <Version>0.0.5</Version>
 
         <TargetFramework>net48</TargetFramework>
         <LangVersion>11</LangVersion>
