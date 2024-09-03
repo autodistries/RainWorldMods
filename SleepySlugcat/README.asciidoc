@@ -36,3 +36,7 @@ Download the xref:https://codeberg.org/catsoft/RainWorldMods/raw/branch/main/Sle
 image::imagesForDescription/customText.png[]
 image::imagesForDescription/overview.png[]
 image::imagesForDescription/modOptions.png[]
+
+## Changelog
+
+3.5: fix not being able to starve in shelters

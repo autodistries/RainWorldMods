@@ -151,7 +151,7 @@ public partial class SleepySlugcatto : BaseUnityPlugin
             // LocalLogSource.LogInfo("P" + self.abstractCreature.world.game.Players.IndexOf(self.abstractCreature) + " " + self.forceSleepCounter + " " + self.sleepCurlUp + " " + self.sleepCounter);
         }
 
-        else if (!sleeping[self.abstractCreature.world.game.Players.IndexOf(self.abstractCreature)] && self.forceSleepCounter > 0)
+        else if (!sleeping[self.abstractCreature.world.game.Players.IndexOf(self.abstractCreature)] && self.forceSleepCounter > 0 && !self.room.abstractRoom.shelter)
         {
             self.forceSleepCounter--; // gradually decrease sleepiness if threshsold not reached
         }
