@@ -68,7 +68,7 @@ public partial class SleepySlugcatto : BaseUnityPlugin
     /// <param name="eu"></param>
     private void CheckForSleepySlugcat(On.Player.orig_Update orig, Player self, bool eu)
     {
-        if (!self.abstractCreature.world.game.Players.Any((player) => player == self.abstractCreature)) {
+        if (self.isNPC) {
             orig(self, eu); 
             return;
         }
@@ -132,10 +132,14 @@ public partial class SleepySlugcatto : BaseUnityPlugin
         if (sleeping[currentPlayerIndex] &&
         (wakeUp[currentPlayerIndex] || self.input[currentPlayerIndex].y > 0 || self.input[currentPlayerIndex].x != 0 || self.input[currentPlayerIndex].jmp
         || currentThreat[currentPlayerIndex].currentThreat > 0.30f
-        || self.bodyMode.value != "Crawl" || self.grabbedBy.Count != 0
+        || (self.bodyMode.value != "Crawl" && self.forceSleepCounter >=260) || self.grabbedBy.Count != 0
         || self.dead || self.Submersion > 0.6f))
         {
              LocalLogSource.LogInfo("waking up rn");
+             LocalLogSource.LogDebug($@"wakeUp[currentPlayerIndex]:{wakeUp[currentPlayerIndex]} self.input[currentPlayerIndex].y > 0:{self.input[currentPlayerIndex].y > 0 } self.input[currentPlayerIndex].x != 0:{self.input[currentPlayerIndex].x != 0} self.input[currentPlayerIndex].jmp:{self.input[currentPlayerIndex].jmp}
+             currentThreat[currentPlayerIndex].currentThreat > 0.30f:{currentThreat[currentPlayerIndex].currentThreat > 0.30f}
+             self.bodyMode.value != Crawl:{self.bodyMode.value != "Crawl"}
+             self.dead:{self.dead} self.Submersion > 0.6f:{self.Submersion > 0.6f}             ");
             wakeUp[currentPlayerIndex] = false;
             self.forceSleepCounter = 0;
             sleeping[currentPlayerIndex] = false;
@@ -157,7 +161,7 @@ public partial class SleepySlugcatto : BaseUnityPlugin
 
 
 
-        if (!sleeping[currentPlayerIndex] && self.Consious
+        if ((!sleeping[currentPlayerIndex]) && self.Consious
         && !self.inShortcut // while in shortcuts, no ground, so IsTileSolid nullrefs
         && self.input[currentPlayerIndex].y < 0 && !self.input[currentPlayerIndex].jmp && !self.input[currentPlayerIndex].thrw && !self.input[currentPlayerIndex].pckp && Math.Abs(self.input[currentPlayerIndex].x) < 0.2f // Check for self.inputs: only down
         && self.IsTileSolid(1, 0, -1) //&& ((!self.IsTileSolid(1, -1, -1) || !self.IsTileSolid(1, 1, -1)) && self.IsTileSolid(1, self.input[0].x, 0)) // check if we have ground to sleep on
@@ -166,14 +170,15 @@ public partial class SleepySlugcatto : BaseUnityPlugin
         )
         {
             self.forceSleepCounter += 2;
-            if (self.forceSleepCounter > 214)
+            if (self.forceSleepCounter > 215)
             {
-                self.forceSleepCounter = 262;
                 self.LoseAllGrasps();
-
+            sleeping[currentPlayerIndex] = true;
+forbidGrasps[currentPlayerIndex] = true;
 
             }
-            // LocalLogSource.LogInfo("P" + currenPlayerIndex + " " + self.forceSleepCounter + " " + self.sleepCurlUp + " " + self.sleepCounter);
+        } else if (sleeping[currentPlayerIndex] && self.forceSleepCounter < 260) {
+            self.forceSleepCounter += 1;
         }
 
 
@@ -181,13 +186,8 @@ public partial class SleepySlugcatto : BaseUnityPlugin
         {
             self.forceSleepCounter--; // gradually decrease sleepiness if threshsold not reached
         }
-        //LocalLogSource.LogDebug("We're at step 5");
 
-        if (self.forceSleepCounter > 260)
-        {
-            sleeping[currentPlayerIndex] = true;
-            forbidGrasps[currentPlayerIndex] = true;
-        }
+
         //LocalLogSource.LogDebug("We're at step 6");
         } catch (Exception e) {
             abnormalState = true;
@@ -226,12 +226,14 @@ public partial class SleepySlugcatto : BaseUnityPlugin
     /// <returns></returns>
     private bool CanWeReallyGrabThatRn(On.Player.orig_CanIPickThisUp orig, Player self, PhysicalObject obj)
     {
-        if (self.abstractCreature.world.game.Players.IndexOf(self.abstractCreature) != -1 && forbidGrasps[self.abstractCreature.world.game.Players.IndexOf(self.abstractCreature)]) return false;
+
+        if (!self.isNPC && forbidGrasps[self.abstractCreature.world.game.Players.IndexOf(self.abstractCreature)]) return false;
         return orig(self, obj);
     }
 
     /// <summary>
     /// Wake up on Collision with anything
+    /// comparison with self.forceSleepCounter lets the objects we lose grasps on get (hopefully) far enough away
     /// </summary>
     /// <param name="orig"></param>
     /// <param name="self"></param>
@@ -240,11 +242,11 @@ public partial class SleepySlugcatto : BaseUnityPlugin
     /// <param name="otherChunk"></param>
     private void WtfWeGotHit(On.Player.orig_Collide orig, Player self, PhysicalObject otherObject, int myChunk, int otherChunk)
     {
-        if (sleeping[self.abstractCreature.world.game.Players.IndexOf(self.abstractCreature)])
+        if (!self.isNPC &&  sleeping[self.abstractCreature.world.game.Players.IndexOf(self.abstractCreature)] && self.forceSleepCounter >= 260)
         {
             wakeUp[self.abstractCreature.world.game.Players.IndexOf(self.abstractCreature)] = true;
             self.forceSleepCounter = 0;
-            // LocalLogSource.LogInfo("collided");
+             LocalLogSource.LogInfo("collided: "+(self).slugcatStats.name + " and "+otherObject.GetType());
         }
         orig(self, otherObject, myChunk, otherChunk);
     }
@@ -256,7 +258,7 @@ public partial class SleepySlugcatto : BaseUnityPlugin
     /// <param name="self"></param>
     private void WhyDidIDie(On.Player.orig_Die orig, Player self)
     {
-        if (sleeping[self.abstractCreature.world.game.Players.IndexOf(self.abstractCreature)] || self.sleepCurlUp > 0.5f)
+        if (!self.isNPC &&  (sleeping[self.abstractCreature.world.game.Players.IndexOf(self.abstractCreature)] || self.sleepCurlUp > 0.5f))
         {
             wakeUp[self.abstractCreature.world.game.Players.IndexOf(self.abstractCreature)] = true;
             self.forceSleepCounter = 0;
