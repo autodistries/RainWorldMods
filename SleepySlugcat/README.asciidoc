@@ -2,8 +2,7 @@ image::imagesForDescription/fimage.png[]
 
 
 
-Let the lil man sleep ! (with a supplement of Zzs)
-
+Let the lil man sleep ! (with a supplement of Zzs) +
 When you are in a calm place, take the time to sleep by holding down and relaxing.
 
 ## Features
@@ -40,3 +39,4 @@ image::imagesForDescription/modOptions.png[]
 ## Changelog
 
 3.5: fix not being able to starve in shelters
+3.6: fix slugpup bug, probably

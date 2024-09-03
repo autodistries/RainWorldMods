@@ -68,6 +68,11 @@ public partial class SleepySlugcatto : BaseUnityPlugin
     /// <param name="eu"></param>
     private void CheckForSleepySlugcat(On.Player.orig_Update orig, Player self, bool eu)
     {
+        if (!self.abstractCreature.world.game.Players.Any((player) => player == self.abstractCreature)) {
+            orig(self, eu); 
+            return;
+        }
+
         if (self.abstractCreature.world.game.Players.Count != sleeping.Count)
         {
             LocalLogSource.LogInfo("filling in all lists to match players count ! (mod)" + self.abstractCreature.world.game.Players.Count);
@@ -78,7 +83,7 @@ public partial class SleepySlugcatto : BaseUnityPlugin
             {
                 
                 LocalLogSource.LogInfo("adding player no "+i + "" + (self.room.game.Players[i].realizedCreature as Player).slugcatStats.name);
-              //  LocalLogSource.LogInfo("i:"+i+" index:"+self.abstractCreature.world.game.Players.IndexOf(self.abstractCreature)+ "translation:"+self.abstractCreature.world.game.Players.IndexOf(self.abstractCreature)+" playerNumber:"+self.playerState.playerNumber );
+                LocalLogSource.LogInfo("i:"+i+" index according to game:"+self.abstractCreature.world.game.Players.IndexOf(self.abstractCreature)+" playerNumber:"+self.playerState.playerNumber );
                 sleeping.Add(false);
                 wakeUp.Add(false);
                 forbidGrasps.Add(false);
@@ -91,52 +96,72 @@ public partial class SleepySlugcatto : BaseUnityPlugin
             }
         }
 
-        //LocalLogSource.LogInfo("We're at step 1");
+        //LocalLogSource.LogInfo($"We're at step 1. currentPlayerIndex will be={self.abstractCreature.world.game.Players.IndexOf(self.abstractCreature)} sleeping.Count:{sleeping.Count} updatesSinceLastZPopped.Count:{updatesSinceLastZPopped.Count}");
 
         // showZs(self);
-
-        if (sleeping[self.abstractCreature.world.game.Players.IndexOf(self.abstractCreature)])
+        int currentPlayerIndex = self.abstractCreature.world.game.Players.IndexOf(self.abstractCreature);
+       
+        if (abnormalStateFreshness > 40)
         {
+            LocalLogSource.LogWarning("trying to exit abnormal state !");
+            abnormalStateFreshness = 0;
+            abnormalState = false;
+        }
+        if (abnormalState)
+        {
+            abnormalStateFreshness++; 
+            orig(self, eu); 
+            return;
+        }
+
+        try
+        {
+
+            if (sleeping[currentPlayerIndex])
+            {
             if (!singleZs) {
                 if (showZs(self)) {
-                    updatesSinceLastZPopped[self.abstractCreature.world.game.Players.IndexOf(self.abstractCreature)] = 0;
+                    updatesSinceLastZPopped[currentPlayerIndex] = 0;
                 } else {
-                    updatesSinceLastZPopped[self.abstractCreature.world.game.Players.IndexOf(self.abstractCreature)]++;
+                    updatesSinceLastZPopped[currentPlayerIndex]++;
                 }
             }
         }
-        if (sleeping[self.abstractCreature.world.game.Players.IndexOf(self.abstractCreature)] &&
-        (wakeUp[self.abstractCreature.world.game.Players.IndexOf(self.abstractCreature)] || self.input[self.abstractCreature.world.game.Players.IndexOf(self.abstractCreature)].y > 0 || self.input[self.abstractCreature.world.game.Players.IndexOf(self.abstractCreature)].x != 0 || self.input[self.abstractCreature.world.game.Players.IndexOf(self.abstractCreature)].jmp
-        || currentThreat[self.abstractCreature.world.game.Players.IndexOf(self.abstractCreature)].currentThreat > 0.30f
+        //LocalLogSource.LogDebug("We're at step 2");
+
+        if (sleeping[currentPlayerIndex] &&
+        (wakeUp[currentPlayerIndex] || self.input[currentPlayerIndex].y > 0 || self.input[currentPlayerIndex].x != 0 || self.input[currentPlayerIndex].jmp
+        || currentThreat[currentPlayerIndex].currentThreat > 0.30f
         || self.bodyMode.value != "Crawl" || self.grabbedBy.Count != 0
         || self.dead || self.Submersion > 0.6f))
         {
              LocalLogSource.LogInfo("waking up rn");
-            wakeUp[self.abstractCreature.world.game.Players.IndexOf(self.abstractCreature)] = false;
+            wakeUp[currentPlayerIndex] = false;
             self.forceSleepCounter = 0;
-            sleeping[self.abstractCreature.world.game.Players.IndexOf(self.abstractCreature)] = false;
-            forbidGrasps[self.abstractCreature.world.game.Players.IndexOf(self.abstractCreature)] = false;
+            sleeping[currentPlayerIndex] = false;
+            forbidGrasps[currentPlayerIndex] = false;
         }
         debugCounter++;
         debugCounter %= 40;
-        //LocalLogSource.LogDebug("We're at step 2");
+       // LocalLogSource.LogDebug("We're at step 3");
 
 
         if (debugCounter % 10 == 0 || debugCounter % 10 == 1)
         {
-            if (!self.dead) currentThreat[self.abstractCreature.world.game.Players.IndexOf(self.abstractCreature)].Update(self.abstractCreature.world.game);
+            if (!self.dead) currentThreat[currentPlayerIndex].Update(self.abstractCreature.world.game);
 
             // showOrUpdateTheThreats(self); // debug thingie !
         }
 
+       // LocalLogSource.LogDebug("We're at step 4");
 
 
 
-        if (!sleeping[self.abstractCreature.world.game.Players.IndexOf(self.abstractCreature)] && self.Consious
+        if (!sleeping[currentPlayerIndex] && self.Consious
         && !self.inShortcut // while in shortcuts, no ground, so IsTileSolid nullrefs
-        && self.input[self.abstractCreature.world.game.Players.IndexOf(self.abstractCreature)].y < 0 && !self.input[self.abstractCreature.world.game.Players.IndexOf(self.abstractCreature)].jmp && !self.input[self.abstractCreature.world.game.Players.IndexOf(self.abstractCreature)].thrw && !self.input[self.abstractCreature.world.game.Players.IndexOf(self.abstractCreature)].pckp && Math.Abs(self.input[self.abstractCreature.world.game.Players.IndexOf(self.abstractCreature)].x) < 0.2f // Check for self.inputs: only down
+        && self.input[currentPlayerIndex].y < 0 && !self.input[currentPlayerIndex].jmp && !self.input[currentPlayerIndex].thrw && !self.input[currentPlayerIndex].pckp && Math.Abs(self.input[currentPlayerIndex].x) < 0.2f // Check for self.inputs: only down
         && self.IsTileSolid(1, 0, -1) //&& ((!self.IsTileSolid(1, -1, -1) || !self.IsTileSolid(1, 1, -1)) && self.IsTileSolid(1, self.input[0].x, 0)) // check if we have ground to sleep on
-        && currentThreat[self.abstractCreature.world.game.Players.IndexOf(self.abstractCreature)].currentThreat < 0.15f // check if we feel threatened
+        && currentThreat[currentPlayerIndex].currentThreat < 0.15f // check if we feel threatened
         && !self.room.abstractRoom.shelter // do not nap while in shelter
         )
         {
@@ -148,18 +173,25 @@ public partial class SleepySlugcatto : BaseUnityPlugin
 
 
             }
-            // LocalLogSource.LogInfo("P" + self.abstractCreature.world.game.Players.IndexOf(self.abstractCreature) + " " + self.forceSleepCounter + " " + self.sleepCurlUp + " " + self.sleepCounter);
+            // LocalLogSource.LogInfo("P" + currenPlayerIndex + " " + self.forceSleepCounter + " " + self.sleepCurlUp + " " + self.sleepCounter);
         }
 
-        else if (!sleeping[self.abstractCreature.world.game.Players.IndexOf(self.abstractCreature)] && self.forceSleepCounter > 0 && !self.room.abstractRoom.shelter)
+
+        else if (!sleeping[currentPlayerIndex] && self.forceSleepCounter > 0 && !self.room.abstractRoom.shelter)
         {
             self.forceSleepCounter--; // gradually decrease sleepiness if threshsold not reached
         }
+        //LocalLogSource.LogDebug("We're at step 5");
 
         if (self.forceSleepCounter > 260)
         {
-            sleeping[self.abstractCreature.world.game.Players.IndexOf(self.abstractCreature)] = true;
-            forbidGrasps[self.abstractCreature.world.game.Players.IndexOf(self.abstractCreature)] = true;
+            sleeping[currentPlayerIndex] = true;
+            forbidGrasps[currentPlayerIndex] = true;
+        }
+        //LocalLogSource.LogDebug("We're at step 6");
+        } catch (Exception e) {
+            abnormalState = true;
+            Logger.LogError(e);
         }
 
         orig(self, eu);
@@ -194,7 +226,7 @@ public partial class SleepySlugcatto : BaseUnityPlugin
     /// <returns></returns>
     private bool CanWeReallyGrabThatRn(On.Player.orig_CanIPickThisUp orig, Player self, PhysicalObject obj)
     {
-        if (forbidGrasps[self.abstractCreature.world.game.Players.IndexOf(self.abstractCreature)]) return false;
+        if (self.abstractCreature.world.game.Players.IndexOf(self.abstractCreature) != -1 && forbidGrasps[self.abstractCreature.world.game.Players.IndexOf(self.abstractCreature)]) return false;
         return orig(self, obj);
     }
 
@@ -338,6 +370,9 @@ public partial class SleepySlugcatto : BaseUnityPlugin
 
     #region RemixInterface
     private ModOptions modOptions;
+    private bool abnormalState = false;
+    private int abnormalStateFreshness;
+
     public SleepySlugcatto()
     {
         modOptions = new ModOptions(this);
