@@ -28,6 +28,8 @@ public partial class SleepySlugcatto : BaseUnityPlugin
     private bool singleZs = false;
     private List<int> updatesSinceLastZPopped = new();
 
+    private bool anyoneInVoidSea = false;
+
 
 
 
@@ -47,6 +49,8 @@ public partial class SleepySlugcatto : BaseUnityPlugin
 
         LocalLogSource.LogInfo("Hooking setup methods...");
 
+        try {
+
         On.Player.Update += CheckForSleepySlugcat; //handles main logic
         On.Player.CanIPickThisUp += CanWeReallyGrabThatRn; // prevent grabbing when sleeping
         On.Player.Collide += WtfWeGotHit; //stop sleeping if something collides with us
@@ -56,7 +60,19 @@ public partial class SleepySlugcatto : BaseUnityPlugin
         On.RainWorldGame.ctor += ResetDebuggingView; // reset variables and other things when re-entering the game
 
         On.RainWorld.OnModsInit += RainWorldOnOnModsInitDetour; // mod options interface
+} catch (Exception e){
+    Logger.LogError(e);
+    Logger.LogError("this mod has been disabled.");
+      On.Player.Update -= CheckForSleepySlugcat; //handles main logic
+        On.Player.CanIPickThisUp -= CanWeReallyGrabThatRn; // prevent grabbing when sleeping
+        On.Player.Collide -= WtfWeGotHit; //stop sleeping if something collides with us
+        On.Player.Die -= WhyDidIDie; // stop sleeping right befroe we die obviously
+        On.Player.JollyEmoteUpdate -= NoYouDont; // If jolly is enabled, its emote thing will overlap with our sleep thing and uncurl
 
+        On.RainWorldGame.ctor -= ResetDebuggingView; // reset variables and other things when re-entering the game
+
+        On.RainWorld.OnModsInit -= RainWorldOnOnModsInitDetour; 
+}
     }
 
 
@@ -68,7 +84,8 @@ public partial class SleepySlugcatto : BaseUnityPlugin
     /// <param name="eu"></param>
     private void CheckForSleepySlugcat(On.Player.orig_Update orig, Player self, bool eu)
     {
-        if (self.isNPC) {
+        if (!anyoneInVoidSea && self.inVoidSea) anyoneInVoidSea=true;
+        if (self.isNPC || anyoneInVoidSea) {
             orig(self, eu); 
             return;
         }
@@ -101,7 +118,7 @@ public partial class SleepySlugcatto : BaseUnityPlugin
         // showZs(self);
         int currentPlayerIndex = self.abstractCreature.world.game.Players.IndexOf(self.abstractCreature);
        
-        if (abnormalStateFreshness > 40)
+        if (abnormalStateFreshness > 40 * (1 + sleeping.Count))
         {
             LocalLogSource.LogWarning("trying to exit abnormal state !");
             abnormalStateFreshness = 0;
@@ -201,6 +218,7 @@ forbidGrasps[currentPlayerIndex] = true;
     private void clearLocalVariables()
     {
         LocalLogSource.LogInfo("clearing variables");
+        anyoneInVoidSea=false;
             sleeping.Clear();
             wakeUp.Clear();
             forbidGrasps.Clear();
@@ -227,7 +245,7 @@ forbidGrasps[currentPlayerIndex] = true;
     private bool CanWeReallyGrabThatRn(On.Player.orig_CanIPickThisUp orig, Player self, PhysicalObject obj)
     {
 
-        if (!self.isNPC && forbidGrasps[self.abstractCreature.world.game.Players.IndexOf(self.abstractCreature)]) return false;
+        if (  !(self.isNPC || anyoneInVoidSea) && self.abstractCreature.world.game.Players.IndexOf(self.abstractCreature) != -1 && forbidGrasps[self.abstractCreature.world.game.Players.IndexOf(self.abstractCreature)]) return false;
         return orig(self, obj);
     }
 
@@ -242,7 +260,7 @@ forbidGrasps[currentPlayerIndex] = true;
     /// <param name="otherChunk"></param>
     private void WtfWeGotHit(On.Player.orig_Collide orig, Player self, PhysicalObject otherObject, int myChunk, int otherChunk)
     {
-        if (!self.isNPC &&  sleeping[self.abstractCreature.world.game.Players.IndexOf(self.abstractCreature)] && self.forceSleepCounter >= 260)
+        if (!(self.isNPC || anyoneInVoidSea) &&  sleeping[self.abstractCreature.world.game.Players.IndexOf(self.abstractCreature)] && self.forceSleepCounter >= 260)
         {
             wakeUp[self.abstractCreature.world.game.Players.IndexOf(self.abstractCreature)] = true;
             self.forceSleepCounter = 0;
@@ -258,7 +276,7 @@ forbidGrasps[currentPlayerIndex] = true;
     /// <param name="self"></param>
     private void WhyDidIDie(On.Player.orig_Die orig, Player self)
     {
-        if (!self.isNPC &&  (sleeping[self.abstractCreature.world.game.Players.IndexOf(self.abstractCreature)] || self.sleepCurlUp > 0.5f))
+        if (!(self.isNPC || anyoneInVoidSea) &&  (sleeping[self.abstractCreature.world.game.Players.IndexOf(self.abstractCreature)] || self.sleepCurlUp > 0.5f))
         {
             wakeUp[self.abstractCreature.world.game.Players.IndexOf(self.abstractCreature)] = true;
             self.forceSleepCounter = 0;
