@@ -260,7 +260,7 @@ forbidGrasps[currentPlayerIndex] = true;
     /// <param name="otherChunk"></param>
     private void WtfWeGotHit(On.Player.orig_Collide orig, Player self, PhysicalObject otherObject, int myChunk, int otherChunk)
     {
-        if (!(self.isNPC || anyoneInVoidSea) &&  sleeping[self.abstractCreature.world.game.Players.IndexOf(self.abstractCreature)] && self.forceSleepCounter >= 260)
+        if (!(self.isNPC || anyoneInVoidSea) &&  self.abstractCreature.world.game.Players.IndexOf(self.abstractCreature) != -1 && sleeping[self.abstractCreature.world.game.Players.IndexOf(self.abstractCreature)] && self.forceSleepCounter >= 260)
         {
             wakeUp[self.abstractCreature.world.game.Players.IndexOf(self.abstractCreature)] = true;
             self.forceSleepCounter = 0;
@@ -276,7 +276,7 @@ forbidGrasps[currentPlayerIndex] = true;
     /// <param name="self"></param>
     private void WhyDidIDie(On.Player.orig_Die orig, Player self)
     {
-        if (!(self.isNPC || anyoneInVoidSea) &&  (sleeping[self.abstractCreature.world.game.Players.IndexOf(self.abstractCreature)] || self.sleepCurlUp > 0.5f))
+        if (!(self.isNPC || anyoneInVoidSea) && self.abstractCreature.world.game.Players.IndexOf(self.abstractCreature) != -1 && (sleeping[self.abstractCreature.world.game.Players.IndexOf(self.abstractCreature)] || self.sleepCurlUp > 0.5f))
         {
             wakeUp[self.abstractCreature.world.game.Players.IndexOf(self.abstractCreature)] = true;
             self.forceSleepCounter = 0;

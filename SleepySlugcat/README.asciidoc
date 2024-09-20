@@ -42,3 +42,4 @@ image::imagesForDescription/modOptions.png[]
 3.6: fix slugpup bug, probably +
 3.7: give some immunity to slugcat with collision when starting to sleep, because when sleeping with gooieducks, they are so big that they unsleep us when we lose grasp on them
 3.8: fix void sea
+3.9: fix anther bug related to creatures taking damage
