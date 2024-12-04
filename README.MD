@@ -9,7 +9,5 @@ Mods Updater: an off-steam mods updater
 
 .Plans
 - (mod) TAS recording and replaying tool
-- Mods downloader :
-    - support for git sources
-    - on-mod preview update button
 - (mod) universal fan translation
+- (mod) ???
