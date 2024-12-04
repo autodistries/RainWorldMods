@@ -25,13 +25,11 @@ public partial class StepByStep : BaseUnityPlugin
     bool localPauseStatus = false;
     bool currentlySteppingStatus = false;
     int stepperCounter = 0;
-    int intermediateDelay = 0;
     public static ManualLogSource lls
     {
         get => LocalLogSource;
     }
 
-    bool releasedPauseButton = false;
 
 
 
@@ -40,15 +38,16 @@ public partial class StepByStep : BaseUnityPlugin
     public System.Collections.Generic.Dictionary<Configurable<bool>, ModOptions.SomeUpdateFunction> Configurables = new();
 
     private Configurable<KeyCode> pauseButtonConfigurable; // stored in this.config.configurables[]
-    private Configurable<KeyCode> resumeButtonConfigurable; // stored in this.config.configurables[]
     private Configurable<KeyCode> stepButtonConfigurable; // stored in this.config.configurables[]
     private Configurable<float> chainStepSpeedConfigurable;
 
-    private KeyCode[] keys = new KeyCode[2];
+    private readonly KeyCode[] keys = new KeyCode[2];
 
     private float chainSpeedStep = 0.5f;
 
     private ModOptions Options;
+
+    private bool diffKeypresses = true;
     #endregion opts
 
 
@@ -89,46 +88,55 @@ public partial class StepByStep : BaseUnityPlugin
 
     private void UpdateStopper(On.RainWorld.orig_Update orig, RainWorld self)
     {
-            if (intermediateDelay != 0) intermediateDelay--;
-        if (Input.GetKey(keys[0]) )
+        // lls.LogDebug("input says: " + Input.inputString);
+        if (Input.GetKeyDown(keys[0]) || Input.GetKeyUp(keys[0]) )
         {
-            if (!localPauseStatus && intermediateDelay==0)
+                            // lls.LogInfo("KEY IS DONWNWNN!");
+
+
+            if (!localPauseStatus && Input.GetKeyDown(keys[0]))
             {
                 localPauseStatus = true;
-                intermediateDelay = 10;
+                lls.LogInfo("pausing game !");
+                diffKeypresses = false;
             }
-            else
+            else if (localPauseStatus && Input.GetKeyUp(keys[0]))
             {
-
-                if (intermediateDelay == 0)
+                if (diffKeypresses)
                 {
-                    localPauseStatus = false;
-                    lls.LogInfo("recieved end of press");
-                    intermediateDelay = 10;
+                    localPauseStatus = false; 
+                    diffKeypresses = false;
+                    lls.LogInfo("resume game !");
                 }
+                else diffKeypresses = true;
             }
+
         }
-
-
-        else if (localPauseStatus)
+        else
         {
-
-            if (Input.GetKey(keys[1]))
+            if (localPauseStatus)
             {
 
-                if ((stepperCounter == 0) || stepperCounter > 20)
-                { //2s ?
-                    if (stepperCounter % ((int)(chainSpeedStep * 40)) == 0)
-                    {
-                        currentlySteppingStatus = true;
+                if (Input.GetKey(keys[1]))
+                {
+
+                    if ((stepperCounter == 0) || stepperCounter > 20)
+                    { //2s ?
+                        if (stepperCounter % ((int)(chainSpeedStep * 40)) == 0)
+                        {
+                            currentlySteppingStatus = true;
+                        }
                     }
+                    stepperCounter++;
+                    //LocalLogSource.LogDebug(stepperCounter + " " + (stepperCounter % ((int)(chainSpeedStep * 50))));
                 }
-                stepperCounter++;
-                //LocalLogSource.LogDebug(stepperCounter + " " + (stepperCounter % ((int)(chainSpeedStep * 50))));
+                else stepperCounter = 0;
+
             }
-            else stepperCounter = 0;
 
         }
+
+
 
         if (!localPauseStatus || currentlySteppingStatus) orig(self);
 

@@ -5,7 +5,7 @@
         Put whatever you want inside here : -->
         <PluginID>"nope.stepbystep"</PluginID>
         <Product>"Step By Step"</Product>
-        <Version>1.2</Version>
+        <Version>1.3</Version>
         <Desc>"This mod lets you stop the game and run it frame by frame.&lt;LINE&gt;By default, press P to pause and L to step forwards. You can hold L to do chain multiple steps. Press P again to resume the game normally.&lt;LINE&gt;You can configure keybinds and chain speed in the remix menu.&lt;LINE&gt;If you press other keys when stepping, the game will recieve them and act accordingly.&lt;LINE&gt;&lt;LINE&gt;Possible use cases include analyzing a situation before reacting, debugging at what frame/action your mod does not work, or practising/performing movment tech at a frame-level precision"</Desc>
 
         <TargetFramework>net48</TargetFramework>
