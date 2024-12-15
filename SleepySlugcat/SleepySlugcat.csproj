@@ -9,7 +9,7 @@
         <OutDir>./$(AssemblyName)/plugins/</OutDir>
         <DebugType>None</DebugType>
         <DebugSymbols>False</DebugSymbols>
-        <RWDir>../../../../.local/share/Steam/steamapps/common/Rain World/</RWDir>
+        <RWDir>$(HOME)/.local/share/Steam/steamapps/common/Rain World/</RWDir>
         <NoWarn>0436</NoWarn>
     </PropertyGroup>
     <ItemGroup>
