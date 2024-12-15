@@ -1,0 +1,10 @@
+{
+    "id": "000nope.tassist",
+    "name": "TAssist",
+    "version": "0.0.1",
+    "authors": "Nope",
+    "description": "An in-game TAS runner",
+    "requirements": [],
+    "requirements_names": [],
+    "checksum_override_version": true
+  }
