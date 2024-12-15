@@ -1,19 +1,8 @@
 ﻿using BepInEx;
-using Menu;
-using Menu.Remix.MixedUI;
-using On.RWCustom;
-using System;
-using System.IO;
-using System.Linq;
-using System.Reflection;
 using UnityEngine;
 using static StepByStep.PluginInfo;
 namespace StepByStep;
-
-using System.Collections.Generic;
-using System.Reflection;
 using BepInEx.Logging;
-using MonoMod.RuntimeDetour;
 
 
 [BepInPlugin(PLUGIN_GUID, PLUGIN_NAME, PLUGIN_VERSION)]
