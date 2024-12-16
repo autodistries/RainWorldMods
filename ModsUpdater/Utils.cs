@@ -20,28 +20,47 @@ public static class Utils
     public static class VersionManager
     {
         // Only supports . as a separator !
-        public static bool IsVersionGreater(string a, string b)
+        /// <summary>
+        /// Compares two version strings. Dots are separators. Letters are supported as the last char.
+        /// </summary>
+        /// <param name="a"></param>
+        /// <param name="b"></param>
+        /// <returns>-1 if any error occurs
+        /// 0 if versions are the same
+        /// 1 if a > b
+        /// 2 if b > a
+        /// </returns>
+        public static int CompareVersions(string a, string b)
         {
             //Console.WriteLine("Comparing " + a + " to " + b);
             if (a == null || b == null || !CheckVersionValidity(a) || !CheckVersionValidity(b))
             {
 
-                return false;
+                return -1;
             }
+            try {
+                List<Int32> versionA = VersionToList(a);
+                List<Int32> versionB = VersionToList(b);
 
-            List<Int32> versionA = VersionToList(a);
-            List<Int32> versionB = VersionToList(b);
-
-            for (int i = 0; i < Math.Max(versionA.Count, versionB.Count); i++)
-            {
-                if (versionA.Count > i && versionB.Count > i)
+                for (int i = 0; i < Math.Max(versionA.Count, versionB.Count); i++)
                 {
-                    if (versionB[i] > versionA[i]) return true;
-                    else if (versionA[i] > versionB[i]) return false;
+                    if (versionA.Count > i && versionB.Count > i)
+                    {
+                        if (versionB[i] > versionA[i]) return 1;
+                        else if (versionA[i] > versionB[i]) return 2;
+                    }
+                    else if (versionB.Count > versionA.Count) return 1;
+                    else if (versionB.Count < versionA.Count) return 1;
                 }
-                else if (versionB.Count > versionA.Count && versionB[i] != 0) return true;
+                return 0;
             }
-            return false;
+            catch
+            {
+                return -1;
+            }
+            
+
+            
         }
 
         private static List<int> VersionToList(string a)
@@ -116,6 +135,7 @@ public static class Utils
             }
             if (dictionary.ContainsKey("update_url"))
             {
+                Debug.Log("found an update url !");
                 return (0, dictionary["update_url"].ToString());
             }
             else
@@ -238,6 +258,7 @@ public static class Utils
                 }
                 catch (Exception ex)
                 {
+                    ModsUpdater.logger.LogError(ex);
                     return -3;
                 }
             }
@@ -253,6 +274,7 @@ public static class Utils
         /// <returns></returns>
         public static async Task<int> GetUpdateAndUnzip(string url, string modPath)
         {
+            Console.WriteLine("Trying to update " + url +" "+modPath);
             if (offlineMode) return -10;
             if (url == null || modPath == null) return -2;
             if (!url.EndsWith("zip")) return -13;

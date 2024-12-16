@@ -1,10 +1,14 @@
-MoreLogs : logs more things to console
+**SleepySlugcat** : adds ability to Zzz in calm places. Custom text support. See [readme](./SleepySlugcat/README.asciidoc) (done)
 
-SleepySlugcat : adds cosmetics for sleeping
+**StepByStep** : pause the game and continue one frame at a time at the press of a key. No overlay. See [readme](./StepByStep/README.asciidoc) (done)
 
-StepByStep : pause the game and continue one frame at a time
+**Mods Updater**: an off-steam mods updater. See [readme](./ModsUpdater/README.MD) (50%)
 
-Mods Updater: an off-steam mods updater
+**TAssist**: a TAS recorder and player. (33%)
+
+### Probably outdated
+
+**MoreLogs** : logs more things to console
 
 
 .Plans

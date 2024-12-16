@@ -1,12 +1,28 @@
-The goal is to allow users to update their mods if they didn't install them from steam
+## This is a preview mod.  
 
-Things could be done from the remix menu interface
+## Goal
+The goal is to allow users to update their mods if they didn't install them from steam (hello, gog players)
 
-There should be a selectable one-item box to choose between updatable mods & mods which IDs don't match anything from the source file
+## What's done
+- Inside the remix menu, by selecting the info button, get count of mods and their status, and a button to update them all
+- ability to pull mods from the workshop using raindb.js, pulled from AndrewFM's RainDB
 
-The source file should be fetched every two weeks automatically, and we'll add a button for users to fetch it manually (we will make it so it compares result)
+## What remains to be done
+- Support for custom sources, based on a url inside `modinfo.json`
+- Settings for this mod, including:
+    - Frequency of refreshes
+    - Forcing a refresh
+    - Preferring raindb over custom sources
+- Write somewhere when restart is needed
 
+## Broken right now
+- The versions of `raindb.js` are frozen to the first time they ever appeared (or at least, are not updating properly)
 
+## Some more info
+- `raindb.js` is the file used for getting workshop data. It is updated every two weeks auomatically.
+
+## Thanks
+To AndrewFM, whom nicely put a `version` attribute for mods inside `raindb.js`
 
 Here how it would be made:
  On menu open, check internet connection (or check only when trying to fetch blob)
@@ -18,5 +34,3 @@ Here how it would be made:
  - Not found
 
  Update all button will update updateable, then prompt a game restart
-
- ModsUpdater

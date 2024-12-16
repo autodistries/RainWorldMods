@@ -262,7 +262,7 @@ public class ModOptions : OptionInterface
                 {
                     //  lls.LogDebug($"adding {currentWorkingID} {currentWorkingVersion} {currentWorkingLink}");
                     serverMods.Add(new ServerMod(currentWorkingID, currentWorkingVersion, currentWorkingLink));
-                    if (Utils.VersionManager.IsVersionGreater(localMods.FirstOrDefault((lmod) => lmod.ID == currentWorkingID)?.Version, currentWorkingVersion))
+                    if (Utils.VersionManager.CompareVersions(localMods.FirstOrDefault((lmod) => lmod.ID == currentWorkingID)?.Version, currentWorkingVersion) == 1)
                     {
 
                         updatableMods.Add(new ServerMod(currentWorkingID, currentWorkingVersion, currentWorkingLink));

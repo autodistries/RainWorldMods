@@ -3,9 +3,9 @@
         <!-- This is the place where you input mod data ! 
         Other files will get updated based on that.
         Put whatever you want inside here : -->
-        <PluginID>"nope.modsupdater2"</PluginID>
-        <Product>Mods Updater (real)</Product>
-        <Version>0.0.5</Version>
+        <PluginID>"nope.modsupdater"</PluginID>
+        <Product>Mods Updater</Product>
+        <Version>0.0.10</Version>
 
         <TargetFramework>net48</TargetFramework>
         <LangVersion>11</LangVersion>
@@ -23,10 +23,12 @@
 
    <!-- This group fetches every dll from the game & from BepInEx -->
     <ItemGroup>
+        <Reference Include="PUBLIC-Assembly-CSharp">
+        <HintPath>$(RWDir)/BepInEx/utils/PUBLIC-Assembly-CSharp.dll</HintPath>
+        </Reference>
         <Reference Include="./libs/*.dll">
         <Private>false</Private>
         </Reference>
-        
         <!-- <reference Include="$(RWDir)RainWorld_Data/Managed/UnityEngine.dll"> <private>false</private> </reference>
         <reference Include="$(RWDir)RainWorld_Data/Managed/UnityEngine.CoreModule.dll"> <private>false</private> </reference>
         <reference Include="$(RWDir)BepInEx/patchers/*.dll"> <private>false</private> </reference>
@@ -48,10 +50,11 @@
     "name"%3A "mod name",
     "version"%3A "mod version",
     "authors"%3A "Nope",
-    "description"%3A "gescription with a g",
+    "description"%3A "Updates mods, probably",
     "requirements"%3A [],
     "requirements_names"%3A [],
-    "checksum_override_version"%3A true
+    "checksum_override_version"%3A true,
+    "update_url"%3A "https://yepthis.could/work.zip"
   }
 
         ]]></ModinfoGeneric>
@@ -64,6 +67,7 @@
 
         <Exec command="# rm -rf '$(RWDir)'RainWorld_Data/StreamingAssets/mods/$(AssemblyName); echo cleared old mod copy" />
         <Exec Command="cp -r ./$(AssemblyName) '$(RWDir)'RainWorld_Data/StreamingAssets/mods/; echo 'Copied mod data to Rain World mods folder'" Condition="'$(OS)' == 'Unix'" />
+        <Exec Command="zip -r ./$(AssemblyName) ./$(AssemblyName)" Condition="'$(OS)' == 'Unix'" />
              <Exec command="kill -2 $(ps -A | grep RainWorld | awk '{print $1}') | echo 0" />
              <!-- <Exec command="env STEAM_COMPAT_DATA_PATH=/home/guigui/.local/share/Steam/steamapps/compatdata/312520 STEAM_COMPAT_CLIENT_INSTALL_PATH=/home/guigui/.local/share/Steam/steamapps/compatdata WINEDLLOVERRIDES=winhttp=n,b '/home/guigui/.local/share/Steam/steamapps/common/Proton 8.0/proton' waitforexitandrun '/home/guigui/.local/share/Steam/steamapps/common/Rain World/RainWorld.exe' &amp;" /> -->
              

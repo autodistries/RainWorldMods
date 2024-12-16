@@ -1,10 +1,11 @@
 {
-    "id": "nope.modsupdater2",
-    "name": "Mods Updater (real)",
-    "version": "0.0.5",
+    "id": "nope.modsupdater",
+    "name": "Mods Updater",
+    "version": "0.0.10",
     "authors": "Nope",
-    "description": "gescription with a g",
+    "description": "Updates mods, probably",
     "requirements": [],
     "requirements_names": [],
-    "checksum_override_version": true
+    "checksum_override_version": true,
+    "update_url": "https://yepthis.could/work.zip"
   }
