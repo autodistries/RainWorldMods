@@ -11,23 +11,17 @@ using Menu.Remix.MixedUI;
 using UnityEngine;
 namespace ModsUpdater;
 
+
+#nullable enable
 public class ModOptions : OptionInterface
 {
+
+
     ModsUpdater parent;
     bool WasInitialized = false;
     static ManualLogSource lls;
-    private ModOptions.ModsContainer modsContainer;
-
     private static OpLabel infoLabel;
-
-    public ModsContainer localModsContainer
-    {
-        get => modsContainer;
-    }
-
-
-
-
+    public ModsContainer localModsContainer { get; private set; }
 
     UIelement[] UIArrPlayerOptions;
     public ModOptions(ModsUpdater parent, BepInEx.Logging.ManualLogSource logSource)
@@ -73,17 +67,8 @@ public class ModOptions : OptionInterface
 
         opTab.AddItems(UIArrPlayerOptions);
 
-
-
-        modsContainer = await ModOptions.ModsContainer.CreateAsync(new Vector2(10f, 50f), new Vector2(350f, 470f), 0f, false, true);
-        opTab.AddItems(modsContainer);
-
-
-
-
-
-
-
+        localModsContainer = await ModOptions.ModsContainer.CreateAsync(new Vector2(10f, 50f), new Vector2(350f, 470f), 0f, false, true);
+        opTab.AddItems(localModsContainer);
     }
 
 

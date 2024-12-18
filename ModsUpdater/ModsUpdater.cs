@@ -7,18 +7,16 @@ using System.Linq;
 using System.Reflection;
 using static ModsUpdater.PluginInfo;
 using System.Threading.Tasks;
-using System.Text.RegularExpressions;
-using System.Net.Http;
 using UnityEngine;
 using Menu.Remix;
-using Menu;
 using static Menu.Remix.MenuModList;
 using MonoMod.Utils;
 using BepInEx.Logging;
 using System.Security;
 using System.Security.Permissions;
-using System.Security.Cryptography.X509Certificates;
 
+using static ModsUpdater.Graphics;
+using HarmonyLib;
 
 [module: UnverifiableCode]
 [assembly: SecurityPermission(SecurityAction.RequestMinimum, SkipVerification = true)]
@@ -31,23 +29,19 @@ namespace ModsUpdater;
 public partial class ModsUpdater : BaseUnityPlugin
 {
 
+    // The path of THIS mod
     public static string THISMODPATH = Directory.GetParent(Path.GetFullPath(System.Reflection.Assembly.GetExecutingAssembly().Location)).Parent.FullName;
+    // The general mods path
     public static string MODSPATH = Directory.GetParent(Path.GetFullPath(System.Reflection.Assembly.GetExecutingAssembly().Location)).Parent.Parent.FullName;
 
-    static readonly List<ModHolder> ModObjects = new();
-    static readonly List<ServerMod> serverMods = new();
+    // static readonly List<ModHolder> ModObjects = new();
+    static readonly Dictionary<string, ModHolder> ModObjects = new();
 
-     OpSimpleImageButton? BtnUpdateAll { get => btnUpdateAll; set => btnUpdateAll = value; }
+    private List<ServerMod> ServerMods => ModHolder.ServerMods;
 
-    private static InternalOI_Stats? localInternalOiStats; // the REMIX STATS page
-    private static OpLabel? lblUpdatableMods; // On the REMIX STATS page, the updatable label
-    private static OpLabel? lblOrphanedMods;
-    private static OpLabel? lblUpToDateMods;
-    private static OpSimpleImageButton? btnUpdateAll; // the update all btn
-    private static OpLabel? lblModUpdaterStatus; // the info text
-    private static OpLabel? lblPreviewUpdateStatus;
-    private OpSimpleImageButton lblPreviewUpdateButton;
-    private static string modUpdaterStatus = "Welcome !"; // Because text needs to be kept across
+
+
+
 
 
     private static ListButton? infoListButton; // the info button on top of the mods list
@@ -55,13 +49,12 @@ public partial class ModsUpdater : BaseUnityPlugin
 
     static bool done = false; //initialisation
 
-    static bool currentlyReading = false;
+    static bool currentlyLoadingRainDB = false;
     private static bool doneReading = false;
-    private Dictionary<string, (DateTime, ServerMod)> UpdateCheckLog; // cached github info. Updates every day
+    private Dictionary<string, (DateTime, ServerMod)> UpdateCheckLog; // cached foreign updates info
     private string currentlyPreviewedModId;
     readonly ModOptions modOptions;
 
-    public static ManualLogSource logger;
 
 
     public ModsUpdater()
@@ -72,15 +65,16 @@ public partial class ModsUpdater : BaseUnityPlugin
 
 
 
+
+
     private void OnEnable()
     {
         if (done) return;
-        Logger.LogInfo("Hooking setup methods...");
-        Logger.LogInfo("todo: add a buton in own remix menu to re-read raindb.js");
-        logger = Logger;
+        base.Logger.LogInfo("Hooking setup methods...");
         On.RainWorld.OnModsInit += RainWorldOnOnModsInitDetour;
-        On.ModManager.WrapModInitHooks += getLocalMods; // discovers existing local mods (by native Mods manager)
-        On.Menu.MainMenu.ctor += ActuallyhookVersionLabelChange; // hooks further hooks & loads servermods
+        On.ModManager.WrapModInitHooks += LoadLocalMods; // discovers existing local mods (by native Mods manager)
+
+        On.Menu.MainMenu.ctor += ActuallyhookVersionLabelChange; // hooks further hooks & loads servermods. prevents cctors not being inited and stuff
 
         done = true;
     }
@@ -89,68 +83,156 @@ public partial class ModsUpdater : BaseUnityPlugin
     {
         orig(self, manager, showRegionSpecificBkg);
         On.Menu.MainMenu.ctor -= ActuallyhookVersionLabelChange; // unhook myself. This only needs to be ran once
-        On.Menu.Remix.MenuModList.ModButton.ctor += ModButtonChanger; // catches ModButtons in the list to get the version label
-        On.Menu.Remix.MenuModList.ctor += TriggerVersionComp; // after list is built (all ModButtons done), triggers version comparator
+        On.Menu.Remix.MenuModList.ModButton.GrafUpdate += verLabelColorChanger;
+        On.Menu.Remix.MenuModList.ModButton.ctor += ModButtonStorer; // catches ModButtons in the list to get the version label, and modifies the labelver in accordance to statuses
         // On.Menu.Remix.MenuModList.Update += ButtonShower;
         On.Menu.Remix.InternalOI_Stats.Initialize += StatsMenuSetup; // adds info about number of updatable mods & button on REMIX if
-        On.Menu.Remix.InternalOI_Stats._RefreshStats += StatsMenuLabelUpdate; // upates that info
+        On.Menu.Remix.InternalOI_Stats._RefreshStats += StatsMenuLabelsUpdates; // upates that info
         On.Menu.Remix.MenuModList.ListButton.ctor += InfoButtonGetter; // lets us make the update button selectable via keyboard
-        On.Menu.Remix.InternalOI_Stats._PreviewMod += ModPreviewHooker; // puts stuff inside mod preview
-        On.Menu.Remix.MenuModList.ModButton.GrafUpdate += verLabelColorChanger;
+        On.Menu.Remix.InternalOI_Stats._PreviewMod += ModPreviewHooker;
+        On.Menu.ModdingMenu._SwitchToMainMenu += DestroyGraphics; 
 
-        initUpdateCheckLog(); // gather cached data from local file for remote sources
+        initForeignUpdateCheckLog(); // gather cached data from local file for remote sources
         await ParseAndQueryWorkshopModlist(); // get workshop ServerMods
-        await ParseAndQueryForeignModList(); // get other ServerMods
+        if (false) await ParseAndQueryForeignModList(); // get other ServerMods
+        matchLocalAndServerMods();
+
     }
 
-    private void verLabelColorChanger(On.Menu.Remix.MenuModList.ModButton.orig_GrafUpdate orig, ModButton self, float timeStacker)
+    private void DestroyGraphics(On.Menu.ModdingMenu.orig__SwitchToMainMenu orig, Menu.ModdingMenu self)
     {
-        orig(self, timeStacker);
-        if (self._labelVer is null)return;
-        var tm=ModObjects.FirstOrDefault((mh) => mh.VersionLabel == self._labelVer);
-        if (!self._IsImageButton && tm is not default(ModHolder)) {
-            self._labelVer.color = tm.Color;
+        orig(self);
+        Logger.LogDebug("DESTRUCTIOBNNNN");
+        foreach (var mo in ModObjects.Values) {
+            if (mo.ModButton is not null) {
+                mo.ModButton = null;
+            }
+        }
+
+        Graphics.BtnUpdateAll = null;
+        Graphics.LblModUpdaterStatus = null;
+        Graphics.LblOrphanedMods = null;
+        Graphics.BtnUpdateAll = null;
+        Graphics.LblPreviewUpdateButton = null;
+        Graphics.LblPreviewUpdateStatus = null;
+        Graphics.LblUpdatableMods = null;
+        Graphics.LblUpToDateMods = null;
+        Graphics.LocalInternalOiStats = null;
+
+
+        ModHolder.labelVers.Clear();
+    }
+
+    /// <summary>
+    /// puts ServerMod inside ModObject with matching modId
+    /// Mods managed by Steam are exempt of tha treatment
+    /// </summary>
+    private void matchLocalAndServerMods()
+    {
+        if (!doneReading)
+        {
+            Logger.LogError("Trying to match localAndServerMods, but we're not done reading");
+            return;
+        }
+        foreach (var kvp in ModObjects)
+        {
+            var mo = kvp.Value;
+            if (mo.Status == ModStatusTypes.Managed_By_Steam) continue;
+
+            var currentServerMod = ServerMods.FirstOrDefault((mod) => mod.ID == mo.ModID);
+
+            if (currentServerMod != null)
+            {
+                mo.ServerMod = currentServerMod;
+                base.Logger.LogInfo($"{mo.Mod.id}: loc {mo.Mod.version} vs rem {mo.ServerMod.Version} -> {Utils.VersionManager.CompareVersions(mo.Mod.version, mo.ServerMod.Version)}");
+                mo.Status = Utils.VersionManager.CompareVersions(mo.Mod.version, mo.ServerMod.Version) switch
+                {
+                    2 => ModStatusTypes.Dev,
+                    1 => ModStatusTypes.Updatable,
+                    0 => ModStatusTypes.Latest,
+                    _ => ModStatusTypes.Unknown,
+                };
+            }
+            else
+            {
+                mo.Status = ModStatusTypes.Orphan;
+            }
+            mo.UpdateColor();
         }
     }
 
 
-        /*
-        see line 425222
-        public override void GrafUpdate(float timeStacker)
-		{
-			base.GrafUpdate(timeStacker);
-			_rect.GrafUpdate(timeStacker);
-			_rectH.GrafUpdate(timeStacker);
-			_rect.addSize = new Vector2(6f, 6f) * base.bumpBehav.AddSize;
-			if (!_IsImageButton)
-			{
-				_label.color = base.bumpBehav.GetColor(colorEdge);
-			}
-            */
 
+    /// <summary>
+    /// When GrafUpdate-ing ModButtons, check wether or not the current ModButton is registered inside ModObjects
+    /// If so, change its color to the target color
+    /// </summary>
+    /// <param name="orig"></param>
+    /// <param name="self"></param>
+    /// <param name="timeStacker"></param>
+    private void verLabelColorChanger(On.Menu.Remix.MenuModList.ModButton.orig_GrafUpdate orig, ModButton self, float timeStacker)
+    {
+        orig(self, timeStacker);
+        if (self._labelVer is null || self._IsImageButton || !ModObjects.ContainsKey(self.ModID)) return;
+        if (ModObjects[self.ModID].VersionLabel == self._labelVer)
+        {
+            self._labelVer.color = ModObjects[self.ModID].Color;
+        }
+    }
+
+
+    /*
+    see line 425222
+    public override void GrafUpdate(float timeStacker)
+    {
+        base.GrafUpdate(timeStacker);
+        _rect.GrafUpdate(timeStacker);
+        _rectH.GrafUpdate(timeStacker);
+        _rect.addSize = new Vector2(6f, 6f) * base.bumpBehav.AddSize;
+        if (!_IsImageButton)
+        {
+            _label.color = base.bumpBehav.GetColor(colorEdge);
+        }
+        */
+    
+
+
+    /// <summary>
+    /// Called when switching mod previews
+    /// updates current preview's labels (version, source, )
+    /// Allo
+    /// </summary>
+    /// <param name="orig"></param>
+    /// <param name="self"></param>
+    /// <param name="button"></param>
     private void ModPreviewHooker(On.Menu.Remix.InternalOI_Stats.orig__PreviewMod orig, InternalOI_Stats self, ModButton button)
     {
         orig(self, button);
         OptionInterface oi = button.itf;
         if (oi is null) return;
-        ModHolder currentObject = ModObjects.FirstOrDefault((mo) => mo.ModID == oi.mod.id);
+        if (!ModObjects.ContainsKey(oi.mod.id)) return;
+        ModHolder currentObject = ModObjects[oi.mod.id];
         currentlyPreviewedModId = currentObject.ModID;
 
         OpLabel? lblVersion = self.lblVersion;
-        if (currentObject.Status == ModHolder.ModStatusTypes.Updatable&& lblVersion is not null) //TODO: add single update button here
-        lblVersion.text+=" -> "+currentObject.ServerMod!.Version;
-        if (currentObject is null)  return;
-        
-            lblPreviewUpdateStatus!.text = "Status: "+currentObject.Status.ToString();
-            if (currentObject.Status == ModHolder.ModStatusTypes.Updatable || currentObject.Status == ModHolder.ModStatusTypes.Latest) {
-                lblPreviewUpdateStatus!.text+= " (Souce: "+currentObject.ServerMod!.Source+")";
-            } else if (currentObject.Status == ModHolder.ModStatusTypes.Updated) {
-                lblPreviewUpdateStatus!.text = "Restart the game to apply update";
-            }
+        if (currentObject.Status == ModStatusTypes.Updatable && lblVersion is not null) //TODO: add single update button here
+            lblVersion.text += " -> " + currentObject.ServerMod!.Version;
 
-            if (currentObject.Status == ModHolder.ModStatusTypes.Updatable) {
-                lblPreviewUpdateButton.Show();
-            } else lblPreviewUpdateButton.Hide();
+        Graphics.LblPreviewUpdateStatus!.text = "Status: " + currentObject.Status.ToString().Replace("_"," ");
+        if (currentObject.Status == ModStatusTypes.Updatable || currentObject.Status == ModStatusTypes.Latest)
+        {
+            Graphics.LblPreviewUpdateStatus!.text += " (Souce: " + currentObject.ServerMod!.Source + ")";
+        }
+        else if (currentObject.Status == ModStatusTypes.Updated)
+        {
+            Graphics.LblPreviewUpdateStatus!.text = "Restart the game to apply update";
+        }
+
+        if (currentObject.Status == ModStatusTypes.Updatable)
+        {
+            LblPreviewUpdateButton!.Show();
+        }
+        else LblPreviewUpdateButton!.Hide();
 
 
 
@@ -162,14 +244,6 @@ public partial class ModsUpdater : BaseUnityPlugin
     private void RainWorldOnOnModsInitDetour(On.RainWorld.orig_OnModsInit orig, RainWorld self)
     {
         orig(self);
-        // if (MachineConnector.SetRegisteredOI(PLUGIN_GUID, modOptions))
-        // {
-        //     lls.LogInfo("Registered Mod Interface");
-        // }
-        // else
-        // {
-        //     lls.LogError("Could not register Mod Interface");
-        // }
     }
 
 
@@ -177,27 +251,35 @@ public partial class ModsUpdater : BaseUnityPlugin
     /// create a ModObject for each local Mod
     /// </summary>
     /// <param name="orig"></param>
-    internal void getLocalMods(On.ModManager.orig_WrapModInitHooks orig)
+    internal void LoadLocalMods(On.ModManager.orig_WrapModInitHooks orig)
     {
         orig();
         if (ModObjects.Count == 0)
         {
-            Logger.LogInfo("Collecting mods after ModManager WrapInit");
+            base.Logger.LogInfo("Collecting mods after ModManager WrapInit");
             foreach (ModManager.Mod mod in ModManager.InstalledMods)
             {
-                ModObjects.Add(new ModHolder(mod));
+                var mo = new ModHolder(mod);
+                if (mod.workshopMod)
+                {
+                    mo.Status = ModStatusTypes.Managed_By_Steam;
+                    Logger.LogDebug(mod.basePath);
+                }
+                Logger.LogDebug($"Adding {mod.id}");
+                ModObjects.Add(mod.id, mo);
             }
-            Logger.LogInfo("Discovered " + ModObjects.Count + " mods");
+            base.Logger.LogInfo("Discovered " + ModObjects.Count + " mods");
         }
         else
         {
-            Logger.LogWarning("repeat wrapinit");
+            base.Logger.LogWarning("repeat wrapinit");
         }
     }
 
 
     /// <summary>
-    /// add labels and buttons to the remix stats interface
+    /// Create Labels and Buttons, both for the Remix Stats interface and the floating update btns on Mod Previews
+    /// Also add click listeners
     /// </summary>
     /// <param name="orig"></param>
     /// <param name="self"></param>
@@ -209,25 +291,25 @@ public partial class ModsUpdater : BaseUnityPlugin
         {
 
             float num = self._GetDPTexture();
-            Logger.LogDebug(num);
-            lblUpdatableMods = new OpLabel(new Vector2(20f, 260f - num), new Vector2(560f, 30f), $"Updates found for {ModObjects.Count((mod) => mod.Status == ModHolder.ModStatusTypes.Updatable)} mods", FLabelAlignment.Left);
-            lblOrphanedMods = new OpLabel(new Vector2(20f, 240f - num), new Vector2(560f, 30f), "UwU", FLabelAlignment.Left);
-            lblUpToDateMods = new OpLabel(new Vector2(20f, 220f - num), new Vector2(560f, 30f), "AwA", FLabelAlignment.Left);
-            lblModUpdaterStatus = new OpLabel(new Vector2(20f, 160f - num), new Vector2(560f, 30f), modUpdaterStatus, FLabelAlignment.Center) {
+            LblUpdatableMods = new OpLabel(new Vector2(20f, 260f - num), new Vector2(560f, 30f), $"I sure hope this does not meet the user's eye", FLabelAlignment.Left);
+            LblOrphanedMods = new OpLabel(new Vector2(20f, 240f - num), new Vector2(560f, 30f), "UwU", FLabelAlignment.Left);
+            LblUpToDateMods = new OpLabel(new Vector2(20f, 220f - num), new Vector2(560f, 30f), "AwA", FLabelAlignment.Left);
+            LblModUpdaterStatus = new OpLabel(new Vector2(20f, 160f - num), new Vector2(560f, 30f), ModUpdaterStatus, FLabelAlignment.Center)
+            {
                 color = Color.cyan
             };
 
-            BtnUpdateAll = new OpSimpleImageButton(new Vector2(lblUpdatableMods.label.textRect.xMax + 28f, 260f - num), new Vector2(30f, 30f), "keyShiftB")
+            BtnUpdateAll = new OpSimpleImageButton(new Vector2(LblUpdatableMods.label.textRect.xMax + 28f, 260f - num), new Vector2(30f, 30f), "keyShiftB")
             {
                 description = "Update all mods"
             };
             BtnUpdateAll.OnClick += async (UIfocusable trigger) =>
             {
-                Logger.LogDebug("trying to update mods");
+                base.Logger.LogDebug("trying to update mods");
                 BtnUpdateAll!.greyedOut = true;
                 int successCounter = 0;
                 int failureCounter = 0;
-                foreach (var mod in ModObjects.FindAll((el) => el.Status == ModHolder.ModStatusTypes.Updatable))
+                foreach (var mod in ModObjects.Values.Where((el) => el.Status == ModStatusTypes.Updatable))
                 {
                     trigger.description = "Updating " + mod.Mod.name;
                     int res = await mod.triggerUpdate();
@@ -235,78 +317,91 @@ public partial class ModsUpdater : BaseUnityPlugin
                     else failureCounter++;
                 }
                 trigger.description = $"success:{successCounter}, failures: {failureCounter}";
-                localInternalOiStats._RefreshStats();
+                LocalInternalOiStats._RefreshStats();
                 // refreshMethodInfo.Invoke(, new object[] { });
-                
-                if (successCounter != 0) ModsUpdater.SetInfoLabelText("Please restart your game to apply updates");
+
+                if (successCounter != 0) ModUpdaterStatus = "Please restart your game to apply updates";
             };
 
 
 
-            self.Tabs[0].AddItems(lblUpdatableMods, lblOrphanedMods, lblUpToDateMods, lblModUpdaterStatus, BtnUpdateAll);
-
-            lblPreviewUpdateStatus = new OpLabel(new Vector2(120f, 485f), new Vector2(560f, 30f), "hi");
-            lblPreviewUpdateButton  = new OpSimpleImageButton(new Vector2(258f, 485f), new Vector2(30f, 30f), "keyShiftB");
-            lblPreviewUpdateButton.Hide();
-            lblPreviewUpdateButton.OnClick += async (UIfocusable targetBtn) => {
+            self.Tabs[0].AddItems(LblUpdatableMods, LblOrphanedMods, LblUpToDateMods, LblModUpdaterStatus, BtnUpdateAll);
+            Graphics.LblPreviewUpdateStatus = new OpLabel(new Vector2(120f, 485f), new Vector2(560f, 30f), "hi");
+            LblPreviewUpdateButton = new OpSimpleImageButton(new Vector2(258f, 485f), new Vector2(30f, 30f), "keyShiftB")
+            {
+                description = "Update X mod, probably"
+            };
+            LblPreviewUpdateButton.Hide();
+            LblPreviewUpdateButton.OnClick += async (UIfocusable targetBtn) =>
+            {
                 targetBtn.greyedOut = true;
                 targetBtn.description = "Updating...";
-                ModHolder mod = ModObjects.FirstOrDefault((mo) => mo.ModID == currentlyPreviewedModId);
-                if (mod is not null) {
+                
+                if (ModObjects.ContainsKey(currentlyPreviewedModId))
+                {
+                    ModHolder mod = ModObjects[currentlyPreviewedModId];
                     int res = await mod.triggerUpdate();
-                    if (res == 0) {
-                        mod.Status = ModHolder.ModStatusTypes.Updated;
-                    targetBtn.greyedOut = false;
-                    targetBtn.description = "OK !";
-                    mod.updateLabel();
-                    lblPreviewUpdateStatus.text = lblPreviewUpdateStatus.text.Split('>').Length == 2 ? lblPreviewUpdateStatus.text.Split('>')[1].Trim() : lblPreviewUpdateStatus.text;
-                    
-                    } 
-                    else{ targetBtn.description = "Could not download the update";
-                    
-                    Logger.LogError(Utils.StatusInfo.get(res));}
-                } else {
-                    targetBtn.description = "Could not find target mod";
+                    if (res == 0)
+                    {
+                        mod.Status = ModStatusTypes.Updated;
+                        targetBtn.greyedOut = false;
+                        targetBtn.description = "OK !";
+                        mod.updateLabel();
+                        Graphics.LblPreviewUpdateStatus.text = Graphics.LblPreviewUpdateStatus.text.Split('>').Length == 2 ? Graphics.LblPreviewUpdateStatus.text.Split('>')[1].Trim() : Graphics.LblPreviewUpdateStatus.text;
+
+                    }
+                    else
+                    {
+                        targetBtn.description = "Could not download the update :(";
+                        base.Logger.LogError(Utils.StatusInfo.get(res));
+                    }
+                }
+                else
+                {
+                    targetBtn.description = "Could not find target mod to update. Where are you ??";
                 }
 
             };
-            self.Tabs[1].AddItems(lblPreviewUpdateStatus, lblPreviewUpdateButton);
+            self.Tabs[1].AddItems(Graphics.LblPreviewUpdateStatus, LblPreviewUpdateButton);
 
 
-            //Tabs[1].AddItems()
 
-            Logger.LogDebug("successfully added items to stats menu");
+            base.Logger.LogDebug("successfully added items to stats menu");
         }
         catch (Exception e) { e.LogDetailed(); }
     }
-    
+
     /// <summary>
-    /// update labels & buttons
+    /// update labels & buttons on the Remix Stats screen
     /// </summary>
     /// <param name="orig"></param>
     /// <param name="self"></param>
-    private void StatsMenuLabelUpdate(On.Menu.Remix.InternalOI_Stats.orig__RefreshStats orig, InternalOI_Stats self)
+    private void StatsMenuLabelsUpdates(On.Menu.Remix.InternalOI_Stats.orig__RefreshStats orig, InternalOI_Stats self)
     {
         orig(self);
-        localInternalOiStats = self;
+        LocalInternalOiStats = self;
         bool anuoneUpdatable = false;
         string updateDetails = "(";
-        foreach (var mo in ModObjects.FindAll((mod) => mod.Status == ModHolder.ModStatusTypes.Updatable)) {
+        foreach (var mo in ModObjects.Values.Where((mod) => mod.Status == ModStatusTypes.Updatable))
+        {
             anuoneUpdatable = true;
-            updateDetails+=mo.Mod.name+", ";
+            updateDetails += mo.Mod.name + ", ";
         }
         if (!anuoneUpdatable)
         {
             BtnUpdateAll!.greyedOut = true;
 
-        } else {
-            BtnUpdateAll!.greyedOut = false;
-            updateDetails= updateDetails.Substring(0, updateDetails.Length -2) + ")";
-            BtnUpdateAll!.description +=updateDetails;
         }
-        lblUpdatableMods!.text = $"Updates found for {ModObjects.Count((mod) => mod.Status == ModHolder.ModStatusTypes.Updatable)} mods";
-        lblOrphanedMods!.text = $"Orphan mods: {ModObjects.Count((mod) => mod.Status == ModHolder.ModStatusTypes.Orphan)}";
-        lblUpToDateMods!.text = $"Up-to-date (or better) mods: {ModObjects.Count((mod) => mod.Status == ModHolder.ModStatusTypes.Latest)}";
+        else
+        {
+            BtnUpdateAll!.greyedOut = false;
+            updateDetails = updateDetails.Substring(0, updateDetails.Length - 2) + ")";
+            BtnUpdateAll!.description += updateDetails;
+        }
+        
+        LblUpdatableMods!.text = $"Updates found for {ModObjects.Values.Count((mod) => mod.Status == ModStatusTypes.Updatable)} mods";
+        LblOrphanedMods!.text = $"Orphan mods: {ModObjects.Values.Count((mod) => mod.Status == ModStatusTypes.Orphan)}";
+        LblUpToDateMods!.text = $"Up-to-date (or better) mods: {ModObjects.Values.Count((mod) => mod.Status == ModStatusTypes.Latest)}";
 
     }
 
@@ -318,61 +413,15 @@ public partial class ModsUpdater : BaseUnityPlugin
     /// <param name="orig"></param>
     /// <param name="self"></param>
     /// <param name="tab"></param>
-    internal void TriggerVersionComp(On.Menu.Remix.MenuModList.orig_ctor orig, MenuModList self, ConfigMenuTab tab)
+    internal void UpdateLabels(On.Menu.Remix.MenuModList.orig_ctor orig, MenuModList self, ConfigMenuTab tab)
     {
         orig(self, tab);
-        if (!doneReading) return;
 
         #region versionLabelsComp
-        Logger.LogInfo("finished discovering versionlabels. comparing strings.");
-        foreach (var mo in ModObjects)
+        base.Logger.LogInfo("Assigning data to versionlabels.");
+        foreach (var mo in ModObjects.Values)
         {
-            if (mo.VersionLabel is not null)
-            {
-
-               // Logger.LogDebug($"prepare comparing version on {mo.ModID}");
-
-                var currentServerMod = (mo.ServerMod is not null) ? mo.ServerMod : serverMods.FirstOrDefault((mod) => mod.ID == mo.ModID);
-
-
-                if (currentServerMod != null)
-                {
-                    mo.ServerMod = currentServerMod;
-                    Logger.LogInfo($"{mo.Mod.id}: loc {mo.Mod.version} vs rem {mo.ServerMod.Version} -> {Utils.VersionManager.CompareVersions(mo.Mod.version, mo.ServerMod.Version)}");
-                    switch (Utils.VersionManager.CompareVersions(mo.Mod.version, mo.ServerMod.Version)) {
-                        case 2:
-                            mo.Status = ModHolder.ModStatusTypes.Dev;
-                            break;
-                        case 1:
-                        mo.VersionLabel.text = mo.Mod.version + "->" + mo.ServerMod.Version;
-                        mo.Status = ModHolder.ModStatusTypes.Updatable;
-                        break;
-                        case 0:
-                            mo.Status = ModHolder.ModStatusTypes.Latest;
-                            break;
-                         default :
-                            mo.Status = ModHolder.ModStatusTypes.Unknown;
-                            break;
-
-                    }
-
-                }
-                else
-                {
-                    mo.Status = ModHolder.ModStatusTypes.Orphan;
-                  //  mo.VersionLabel.text = "orphan";
-                }
-                // mo.VersionLabel.color = UnityEngine.Random.ColorHSV();
-                // mo.VersionLabel.text = "wa";
-                
-            }
-            else
-            {
-                mo.Status = ModHolder.ModStatusTypes.Unknown;
-            }
-
-            mo.UpdateColor();
-
+            mo.updateLabel();
         }
         #endregion versionLabelsComp
 
@@ -381,7 +430,7 @@ public partial class ModsUpdater : BaseUnityPlugin
 
 
     /// <summary>
-    /// get the Remix menu info button. Make it select our update button on click
+    /// Make the Remix menu info button select our update button on click, cuz idk how else to make it selectable
     /// </summary>
     /// <param name="orig"></param>
     /// <param name="self"></param>
@@ -401,13 +450,6 @@ public partial class ModsUpdater : BaseUnityPlugin
         }
     }
 
-    internal static void SetInfoLabelText(string text)
-    {
-        modUpdaterStatus = text;
-        if (lblModUpdaterStatus is null) return;
-        lblModUpdaterStatus.text = modUpdaterStatus;
-    }
-
 
 
     // also provide update info (orphaned, updatable, updated) inside mod preview window
@@ -416,85 +458,34 @@ public partial class ModsUpdater : BaseUnityPlugin
     #region ModListUpdateLabel
 
     /// <summary>
-    /// Modbuttons are represented by the mods inside the mods menu list in the remix menu
-    /// this catches their version label and lets us edit it
+    /// On a ModButton creation, save the current MB into ModObjects to the current matchin Mod (based on ID)
+    /// Also updates the label of the button w/ text & color using the dedicated fctn
     /// </summary>
     /// <param name="orig"></param>
     /// <param name="self"></param>
     /// <param name="list"></param>
     /// <param name="index"></param>
-    internal void ModButtonChanger(On.Menu.Remix.MenuModList.ModButton.orig_ctor orig, Menu.Remix.MenuModList.ModButton self, Menu.Remix.MenuModList list, int index)
+    internal void ModButtonStorer(On.Menu.Remix.MenuModList.ModButton.orig_ctor orig, Menu.Remix.MenuModList.ModButton self, Menu.Remix.MenuModList list, int index)
     {
 
         orig(self, list, index);
-       
 
-        var modObject = ModObjects.FirstOrDefault((modObject) => modObject.ModID == self.ModID);
-        if (modObject is not null)
+
+        if (ModObjects.ContainsKey(self.ModID))
         {
+            var modObject = ModObjects[self.ModID];
             modObject.ModButton = self;
-            Logger.LogWarning("added mod button info for " + self.ModID);
+            base.Logger.LogWarning("added mod button info for " + self.ModID);
+            modObject.updateLabel();
 
         }
-        else Logger.LogWarning("could not find mod for " + self.ModID);
+        else base.Logger.LogWarning("could not find mod for " + self.ModID);
 
         return;
 
     }
 
 
-    internal object? instanciatedFieldGetterReflector(System.Type type, object targetInstance, string fieldName)
-    {
-        FieldInfo fieldInfo = type.GetField(fieldName, BindingFlags.NonPublic | BindingFlags.Instance);
-        if (fieldInfo is not null)
-        {
-            object? result = fieldInfo.GetValue(targetInstance);
-            return result;
-        }
-        return null;
-
-    }
-
-
-
-        internal object? instanciatedPropertyGetterReflector(System.Type type, object targetInstance, string propertyName)
-    {
-        PropertyInfo propertyInfo = type.GetProperty(propertyName, BindingFlags.Public | BindingFlags.Instance);
-        if (propertyInfo is not null)
-        {
-            object? result = propertyInfo.GetValue(targetInstance);
-            return result;
-        }
-        return null;
-
-    }
-    internal OptionInterface? optionInterfaceGetterReflector(MenuModList.ModButton mb)
-    {
-        PropertyInfo propertyInfo = typeof(Menu.Remix.MenuModList.ModButton).GetProperty("itf", BindingFlags.Public | BindingFlags.Instance);
-        if (propertyInfo != null)
-        {
-            OptionInterface? result = propertyInfo.GetValue(mb) as OptionInterface;
-            return result;
-        }
-        Logger.LogError("could not find optioninterface from mod !");
-        return null;
-    }
-
-
-    internal FLabel? versionLabelGetterReflector(MenuModList.ModButton mb)
-    {
-        var fieldInfo = typeof(Menu.Remix.MenuModList.ModButton).GetField("_labelVer", BindingFlags.NonPublic | BindingFlags.Instance);
-        if (fieldInfo != null)
-        {
-            FLabel? value = fieldInfo.GetValue(mb) as FLabel;
-            return value;
-
-            // Now you can work with 'value', which is of type FLabel
-        }
-        Logger.LogError("could not find label current button !");
-
-        return null;
-    }
     #endregion ModListUpdateLabel
 
 
@@ -512,14 +503,15 @@ public partial class ModsUpdater : BaseUnityPlugin
         int searchedForeModsCount = 0;
         int offshortUrlModsCount = 0;
         int updatableOffshoreModsCount = 0;
-        foreach (var mo in ModObjects)
+        foreach (var mo in ModObjects.Values)
         {
             if (mo.ServerMod is null && !mo.Mod.hideVersion && WasLastUpdateLongAgo(mo.Mod.id))
             {
                 searchedForeModsCount++;
                 mo.RemoteModSourceInfo = new RemoteModSourceInfo(mo.Mod);
-                if (mo.RemoteModSourceInfo.status == RemoteModSourceInfo.Status.NoUpdateLink) {
-                    mo.Status = ModHolder.ModStatusTypes.Latest;
+                if (mo.RemoteModSourceInfo.status == RemoteModSourceInfo.Status.NoUpdateLink)
+                {
+                    mo.Status = ModStatusTypes.Latest;
                     continue; //skipping because not updatable this way
                 }
                 offshortUrlModsCount++;
@@ -532,29 +524,31 @@ public partial class ModsUpdater : BaseUnityPlugin
 
             }
         }
-            writeUpdateCheckLog();
-            Logger.LogInfo($"From {totalModsCount} mods, {searchedForeModsCount} searched for update_url, {offshortUrlModsCount} hits, {updatableOffshoreModsCount} updatable");
+        writeUpdateCheckLog();
+        base.Logger.LogInfo($"From {totalModsCount} mods, {searchedForeModsCount} searched for update_url, {offshortUrlModsCount} hits, {updatableOffshoreModsCount} updatable");
     }
 
 
     /// <summary>
     /// this gets from the workshop (github raindb.js)
     /// after DownloadFileIfNewerAsync, read all lines and manually parse through them
+    /// Puts all of its data inside ServerMods[]
     /// </summary>
     /// <returns></returns>
     private async Task ParseAndQueryWorkshopModlist()
     {
         //should be able to concat results with github-provided results
-        if (currentlyReading) return;
-        currentlyReading = true;
+        if (currentlyLoadingRainDB) return;
+        currentlyLoadingRainDB = true;
 
         float startTime = Time.time;
         string url = "https://raw.githubusercontent.com/AndrewFM/RainDB/master/raindb.js";
         string targetPath = Path.Combine(ModsUpdater.THISMODPATH, "raindb.js");
 
         int result = await Utils.FileManager.DownloadFileIfNewerAsync(url, targetPath);
-        if (result <= -10) {
-            SetInfoLabelText("You are offline, or the updater had a fatal error.");
+        if (result <= -10)
+        {
+            ModUpdaterStatus = "You are offline, or the updater had a fatal error.";
             Utils.FileManager.offlineMode = true;
             return;
         }
@@ -585,7 +579,7 @@ public partial class ModsUpdater : BaseUnityPlugin
             else if (line == "") continue;
             else if (line == "});")
             {
-                serverMods.Add(new ServerMod(currentWorkingID, currentWorkingVersion, currentWorkingLink, ServerMod.ServerModType.Workshop) );
+                ServerMods.Add(new ServerMod(currentWorkingID, currentWorkingVersion, currentWorkingLink, ServerMod.ServerModType.Workshop));
             }
             else
             {
@@ -599,7 +593,12 @@ public partial class ModsUpdater : BaseUnityPlugin
                     {
                         case "id":
                             {
+                                if (!ModObjects.ContainsKey(value)) {
+                                    skippingThisMod = true;
+                                    continue;
+                                }
                                 currentWorkingID = value; break;
+
                             }
                         case "version": currentWorkingVersion = value; break;
                         case "url": currentWorkingLink = value; break;
@@ -610,8 +609,8 @@ public partial class ModsUpdater : BaseUnityPlugin
         float endTime = Time.time;
         float elapsedTime = endTime - startTime;
 
-        Logger.LogInfo($"loaded {serverMods.Count} remote mods in {elapsedTime}s");
-        currentlyReading = false;
+        base.Logger.LogInfo($"loaded {ServerMods.Count} remote mods in {elapsedTime}s");
+        currentlyLoadingRainDB = false;
         doneReading = true;
 
     }
@@ -628,17 +627,27 @@ public partial class ModsUpdater : BaseUnityPlugin
     /// <returns></returns>
     private bool WasLastUpdateLongAgo(string modid)
     {
-        if (UpdateCheckLog == null) {
-            initUpdateCheckLog();
+        if (UpdateCheckLog == null)
+        {
+            initForeignUpdateCheckLog();
         }
-        if (UpdateCheckLog!.ContainsKey(modid)) {
-            if ( UpdateCheckLog![modid].Item1 - DateTime.Now>= TimeSpan.FromDays(1)) {
+        if (UpdateCheckLog!.ContainsKey(modid))
+        {
+            if (UpdateCheckLog![modid].Item1 - DateTime.Now >= TimeSpan.FromDays(1))
+            {
                 return true;
-            } else return false;
-        } else return true;
+            }
+            else return false;
+        }
+        else return true;
     }
 
-    private void initUpdateCheckLog()
+
+
+    /// <summary>
+    /// Gets the status of previous ramote foreign mod checks
+    /// </summary>
+    private void initForeignUpdateCheckLog()
     {
         UpdateCheckLog = new();
 
@@ -658,28 +667,30 @@ public partial class ModsUpdater : BaseUnityPlugin
                 string[] parts = line.Split('@');
                 if (parts.Length != 4)
                 {
-                    Logger.LogError("update time logs file is malformed at line "+line); // the damaged file will be overwritten later
-                    return;
+                    base.Logger.LogError("update time logs file is malformed at line " + line); // the damaged file will be overwritten later, we'll skip this line
+                    continue;
                 }
                 string modid = parts[0].Trim();
                 string modversion = parts[2].Trim();
                 string modlink = parts[3].Trim();
                 DateTime latestupdate = DateTime.ParseExact(parts[1].Trim(), "yyyyMMddHHss", System.Globalization.CultureInfo.InvariantCulture);
-                ServerMod serverMod = new(modid,modversion,modlink) {Source = ServerMod.ServerModType.Url};
-                serverMods.Add(serverMod);
+                ServerMod serverMod = new(modid, modversion, modlink) { Source = ServerMod.ServerModType.Url };
+                ServerMods.Add(serverMod);
                 UpdateCheckLog.Add(modid, (latestupdate, serverMod));
             }
         }
     }
 
-    private void writeUpdateCheckLog() {
+    private void writeUpdateCheckLog()
+    {
         string updateFilePath = Path.Combine(THISMODPATH, "updatechecktimes.log");
         if (!File.Exists(updateFilePath))
         {
-           initUpdateCheckLog();
+            initForeignUpdateCheckLog();
         }
         List<string> lines = new();
-        foreach (var linec in UpdateCheckLog) {
+        foreach (var linec in UpdateCheckLog)
+        {
             lines.Add($"{linec.Key}@{linec.Value.Item1.ToString("yyyyMMddHHmm")}@{linec.Value.Item2.Version}@{linec.Value.Item2.Link}");
         }
         File.WriteAllLines(updateFilePath, lines);

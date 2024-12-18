@@ -258,7 +258,7 @@ public static class Utils
                 }
                 catch (Exception ex)
                 {
-                    ModsUpdater.logger.LogError(ex);
+                    Console.WriteLine(ex);
                     return -3;
                 }
             }
@@ -376,6 +376,11 @@ public static class Utils
 
             return statusClass + " : " + statusBody;
         }
+    }
+
+
+    public static UnityEngine.Color C2c(System.Drawing.Color c) {
+        return new UnityEngine.Color(c.A, c.R, c.G, c.B);
     }
 
 

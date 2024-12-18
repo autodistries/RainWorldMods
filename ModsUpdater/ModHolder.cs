@@ -23,29 +23,90 @@ public partial class ModsUpdater
     /// </summary>
     public class ModHolder
     {
-
-        public static List<FLabel> labelVers = new();
+        #region mod
         private ModManager.Mod mod;
-
-        private ModButton modButton;
-        public ModManager.Mod Mod { 
+        public ModManager.Mod Mod
+        {
             get => mod;
         }
-        public string ModID {
+        public string ModID
+        {
             get => mod.id;
         }
+        #endregion mod
 
+        #region servermod
+        static readonly List<ServerMod> serverMods = new();
         ServerMod? serverMod;
         public ServerMod? ServerMod
         {
             get => serverMod;
             set => serverMod = value;
         }
-        public FLabel VersionLabel {
-            get => modButton._labelVer;
+        RemoteModSourceInfo? remoteModSourceInfo;
+        public RemoteModSourceInfo? RemoteModSourceInfo { get => remoteModSourceInfo; set => remoteModSourceInfo = value; }
+        #endregion servermod
+
+        # region graphics
+        private ModButton? modButton;
+        public ModButton? ModButton
+        {
+            get => modButton;
+            set
+            {
+                modButton = value;
+                if (value is not null && value._labelVer is not null) labelVers.Add(value._labelVer);
+            }
         }
 
-        RemoteModSourceInfo? remoteModSourceInfo;
+        public FLabel? VersionLabel
+        {
+            get => modButton?._labelVer;
+        }
+        private Color color = Color.white;
+        public Color Color
+        {
+            get => color;
+        }
+        public static List<FLabel> labelVers = new();
+        public void UpdateColor()
+        {
+            color = status switch
+            {
+
+                ModStatusTypes.Empty => Color.red,
+                ModStatusTypes.Unknown => C2c(System.Drawing.Color.OrangeRed),
+                ModStatusTypes.Dev => Color.cyan,
+                ModStatusTypes.Latest => Color.green,
+                ModStatusTypes.Updated => C2c(System.Drawing.Color.YellowGreen),
+                ModStatusTypes.Updatable => Color.yellow,
+                ModStatusTypes.Managed_By_Steam => Color.blue,
+                ModStatusTypes.Orphan => Color.grey,
+                _ => Color.white,
+            };
+        }
+        public bool updateLabel()
+        {
+            if (VersionLabel is null) return false;
+            UpdateColor();
+            VersionLabel.color = color;
+            if (status == ModStatusTypes.Updatable && serverMod is not null)
+            {
+                VersionLabel.text = Mod.version + "->" + serverMod.Version;
+                return true;
+            }
+            else if (status == ModStatusTypes.Updated && serverMod is not null)
+            {
+                VersionLabel.text = "updated to " + serverMod.Version;
+                return true;
+            }
+            return false;
+        }
+        #endregion graphics
+
+
+
+
 
         ModStatusTypes status = ModStatusTypes.Empty;
         public ModStatusTypes Status
@@ -53,82 +114,40 @@ public partial class ModsUpdater
             get => status;
             set => status = value;
         }
-        public enum ModStatusTypes
-        {
-            Empty, // unknown status
-            Dev, // mod is ahead with remote
-            Latest, // mod is up-to-date with remote
-            Updatable, // a remote update was found
-            Updated, //mod was updated this session
-            Orphan, // no remote sources have picked up this mod
-            Unknown // no version info or bersionning disabled
-        }
 
-        private Color color = Color.white;
-
-        public Color Color {
-            get => color;
-        }
+        public static List<ServerMod> ServerMods => serverMods;
 
 
 
-        
-        public RemoteModSourceInfo? RemoteModSourceInfo { get => remoteModSourceInfo; set => remoteModSourceInfo = value; }
-        public ModButton ModButton { 
-            get => modButton; 
-            set  {
-                modButton = value; 
-                if (value._labelVer is not null) labelVers.Add(value._labelVer);
-            }}
+
 
         public ModHolder(ModManager.Mod modd)
         {
             mod = modd;
         }
 
-        public void UpdateColor() {
-            color = status switch
-                {
-                    
-                    ModStatusTypes.Empty => Color.red,
-                    ModStatusTypes.Dev => Color.white,
-                    ModStatusTypes.Latest => Color.green,
-                    ModStatusTypes.Updatable => Color.yellow,
-                    ModStatusTypes.Updated => new Color(System.Drawing.Color.YellowGreen.A, System.Drawing.Color.YellowGreen.R, System.Drawing.Color.YellowGreen.G, System.Drawing.Color.YellowGreen.B),
-                    ModStatusTypes.Orphan => Color.grey,
-                    ModStatusTypes.Unknown =>  new Color(System.Drawing.Color.OrangeRed.A, System.Drawing.Color.OrangeRed.R, System.Drawing.Color.OrangeRed.G, System.Drawing.Color.OrangeRed.B),
-                    _ => Color.white,
-                };
-        }
 
         /// <summary>
         /// this would let us easily do that only when on remix page, and interactive update thingie.
         /// </summary>
         /// <returns></returns>
-        public bool updateLabel() {
-            if (VersionLabel is null) return false;
-            VersionLabel.color = MenuModList.ModButton.cOutdated;
-            if (status == ModStatusTypes.Updatable &&  serverMod is not null) {
-                VersionLabel.text = Mod.version + "->"+serverMod.Version;
-                return true;
-            } else if (status == ModStatusTypes.Updated && serverMod is not null) {
-                VersionLabel.text = "updated to "+serverMod.Version;
-                return true;
-            } 
-            UpdateColor(); 
-            return false;
-        }
 
         public async Task<int> triggerUpdate()
         {
             if (serverMod is null || VersionLabel is null) return -10;
-            Console.WriteLine("Sterting update process for "+Mod.id);
+            Console.WriteLine("Sterting update process for " + Mod.id);
             int res = await FileManager.GetUpdateAndUnzip(serverMod.Link, Mod.path);
-            if (res == 0) {
+            if (res == 0)
+            {
                 status = ModStatusTypes.Latest;
-                }
-             UpdateColor();
+            }
             return res;
+        }
+
+
+        public void updateLabelText(string text) {
+            if (VersionLabel is null) return;
+            VersionLabel.text = text;
         }
 
 
@@ -138,5 +157,14 @@ public partial class ModsUpdater
 
 }
 
-
-
+        public enum ModStatusTypes
+        {
+            Empty, // unknown status
+            Dev, // mod is ahead with remote
+            Latest, // mod is up-to-date with remote
+            Updatable, // a remote update was found
+            Updated, //mod was updated this session
+            Orphan, // no remote sources have picked up this mod
+            Unknown, // no version info or bersionning disabled
+            Managed_By_Steam
+        }
