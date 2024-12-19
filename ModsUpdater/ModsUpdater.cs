@@ -17,6 +17,7 @@ using System.Security.Permissions;
 
 using static ModsUpdater.Graphics;
 using HarmonyLib;
+using static ModsUpdater.Utils;
 
 [module: UnverifiableCode]
 [assembly: SecurityPermission(SecurityAction.RequestMinimum, SkipVerification = true)]
@@ -53,7 +54,7 @@ public partial class ModsUpdater : BaseUnityPlugin
     private static bool doneReading = false;
     private Dictionary<string, (DateTime, ServerMod)> UpdateCheckLog; // cached foreign updates info
     private string currentlyPreviewedModId;
-    readonly ModOptions modOptions;
+    // readonly ModOptions modOptions;
 
 
 
@@ -93,7 +94,7 @@ public partial class ModsUpdater : BaseUnityPlugin
         On.Menu.ModdingMenu._SwitchToMainMenu += DestroyGraphics; 
 
         initForeignUpdateCheckLog(); // gather cached data from local file for remote sources
-        await ParseAndQueryWorkshopModlist(); // get workshop ServerMods
+        await Task.Run(ParseAndQueryWorkshopModlist); // get workshop ServerMods
         if (false) await ParseAndQueryForeignModList(); // get other ServerMods
         matchLocalAndServerMods();
 
@@ -147,9 +148,9 @@ public partial class ModsUpdater : BaseUnityPlugin
                 base.Logger.LogInfo($"{mo.Mod.id}: loc {mo.Mod.version} vs rem {mo.ServerMod.Version} -> {Utils.VersionManager.CompareVersions(mo.Mod.version, mo.ServerMod.Version)}");
                 mo.Status = Utils.VersionManager.CompareVersions(mo.Mod.version, mo.ServerMod.Version) switch
                 {
-                    2 => ModStatusTypes.Dev,
-                    1 => ModStatusTypes.Updatable,
-                    0 => ModStatusTypes.Latest,
+                    Utils.StatusCode.AheadOfRemote => ModStatusTypes.Dev,
+                    Utils.StatusCode.UpdateAvailable => ModStatusTypes.Updatable,
+                    Utils.StatusCode.LocalFileUpToDate => ModStatusTypes.Latest,
                     _ => ModStatusTypes.Unknown,
                 };
             }
@@ -312,9 +313,13 @@ public partial class ModsUpdater : BaseUnityPlugin
                 foreach (var mod in ModObjects.Values.Where((el) => el.Status == ModStatusTypes.Updatable))
                 {
                     trigger.description = "Updating " + mod.Mod.name;
-                    int res = await mod.triggerUpdate();
-                    if (res == 0) successCounter++;
-                    else failureCounter++;
+                    Utils.StatusCode res = await mod.triggerUpdate();
+                    if (res == Utils.StatusCode.Success) successCounter++;
+                    else
+                    {
+                        failureCounter++;
+                        Logger.LogError("Err : " + Utils.GetErrorMessage(res));
+                    }
                 }
                 trigger.description = $"success:{successCounter}, failures: {failureCounter}";
                 LocalInternalOiStats._RefreshStats();
@@ -340,8 +345,8 @@ public partial class ModsUpdater : BaseUnityPlugin
                 if (ModObjects.ContainsKey(currentlyPreviewedModId))
                 {
                     ModHolder mod = ModObjects[currentlyPreviewedModId];
-                    int res = await mod.triggerUpdate();
-                    if (res == 0)
+                    Utils.StatusCode res = await mod.triggerUpdate();
+                    if (res == Utils.StatusCode.Success)
                     {
                         mod.Status = ModStatusTypes.Updated;
                         targetBtn.greyedOut = false;
@@ -352,8 +357,8 @@ public partial class ModsUpdater : BaseUnityPlugin
                     }
                     else
                     {
-                        targetBtn.description = "Could not download the update :(";
-                        base.Logger.LogError(Utils.StatusInfo.get(res));
+                        targetBtn.description = "Could not download the update :(\n" ;
+                        base.Logger.LogError(Utils.GetErrorMessage(res));
                     }
                 }
                 else
@@ -492,7 +497,7 @@ public partial class ModsUpdater : BaseUnityPlugin
     #region ServerModsGenerators
     /// <summary>
     /// this gets data based on the update_url value inside modinfo.json
-    /// "update_url": "https://github.com/autodistries/dummymod/releases/latest"
+    /// "update_url": "https://github.com/autodistries/RainWorldMods/raw/refs/heads/main/SleepySlugcat/SleepySlugcat.zip"
     /// the check is only done if the mod is not already associated to a Servermod and if update was last checked more than a day ago
     /// </summary>
     /// <returns></returns>
@@ -505,6 +510,7 @@ public partial class ModsUpdater : BaseUnityPlugin
         int updatableOffshoreModsCount = 0;
         foreach (var mo in ModObjects.Values)
         {
+            // we'll change the logic later; we'll need to manage which one (workshop/custom) goes first
             if (mo.ServerMod is null && !mo.Mod.hideVersion && WasLastUpdateLongAgo(mo.Mod.id))
             {
                 searchedForeModsCount++;
@@ -545,13 +551,22 @@ public partial class ModsUpdater : BaseUnityPlugin
         string url = "https://raw.githubusercontent.com/AndrewFM/RainDB/master/raindb.js";
         string targetPath = Path.Combine(ModsUpdater.THISMODPATH, "raindb.js");
 
-        int result = await Utils.FileManager.DownloadFileIfNewerAsync(url, targetPath);
-        if (result <= -10)
-        {
-            ModUpdaterStatus = "You are offline, or the updater had a fatal error.";
-            Utils.FileManager.offlineMode = true;
-            return;
+        Utils.StatusCode result = await Utils.FileManager.IsRemoteFileNewer(url);
+        Logger.LogDebug(result);
+
+        if (result == StatusCode.LocalFileNotFound || result == StatusCode.UpdateAvailable) {
+            await FileManager.DownloadFileAsync(url, targetPath);
+        } else if (result == StatusCode.LocalFileUpToDate ) {
+            Logger.LogDebug("Not updating raindb.js up to date : " + Utils.GetErrorMessage(result));
+
         }
+        else {
+            Logger.LogDebug("Not updating raindb.js cuz error : " + Utils.GetErrorMessage(result));
+
+        }
+       
+           
+     
 
         string[] lines = File.ReadAllLines(Path.Combine(ModsUpdater.THISMODPATH, "raindb.js"));
 

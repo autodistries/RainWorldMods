@@ -25,7 +25,7 @@ public class RemoteModSourceInfo
     //url.host is the host. www.example.com
     internal ServerMod ServerMod;
 
-    (int, string?) remoteUpdateSource;
+    (Utils.StatusCode, string?) remoteUpdateSource;
 
     ModManager.Mod mod;
 
@@ -33,7 +33,7 @@ public class RemoteModSourceInfo
     { //instead we should get url from here. so givr Mod as parameter
         mod = modd;
         GetUpdateUrl();
-        Console.WriteLine(mod.id+": version data said: " + Utils.StatusInfo.get(remoteUpdateSource.Item1));
+        Console.WriteLine(mod.id+": version data said: " + Utils.GetErrorMessage(remoteUpdateSource.Item1));
         if (remoteUpdateSource.Item1 != 0 || remoteUpdateSource.Item2 == "")
         {
             status = Status.NoUpdateLink;

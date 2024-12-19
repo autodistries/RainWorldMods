@@ -132,12 +132,12 @@ public partial class ModsUpdater
         /// </summary>
         /// <returns></returns>
 
-        public async Task<int> triggerUpdate()
+        public async Task<StatusCode> triggerUpdate()
         {
-            if (serverMod is null || VersionLabel is null) return -10;
+            if (serverMod is null || VersionLabel is null) return StatusCode.InvalidParameters;
             Console.WriteLine("Sterting update process for " + Mod.id);
-            int res = await FileManager.GetUpdateAndUnzip(serverMod.Link, Mod.path);
-            if (res == 0)
+            Utils.StatusCode res = await FileManager.GetUpdateAndUnzip(serverMod.Link, Mod.path);
+            if (res == StatusCode.Success)
             {
                 status = ModStatusTypes.Latest;
             }

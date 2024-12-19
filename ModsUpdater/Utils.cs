@@ -2,12 +2,14 @@
 
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using System.Net.Http;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
+using BepInEx.Logging;
 using IL.Menu;
 using IL.MoreSlugcats;
 
@@ -30,13 +32,13 @@ public static class Utils
         /// 1 if a > b
         /// 2 if b > a
         /// </returns>
-        public static int CompareVersions(string a, string b)
+        public static StatusCode CompareVersions(string a, string b)
         {
             //Console.WriteLine("Comparing " + a + " to " + b);
             if (a == null || b == null || !CheckVersionValidity(a) || !CheckVersionValidity(b))
             {
 
-                return -1;
+                return StatusCode.InvalidParameters;
             }
             try {
                 List<Int32> versionA = VersionToList(a);
@@ -46,17 +48,17 @@ public static class Utils
                 {
                     if (versionA.Count > i && versionB.Count > i)
                     {
-                        if (versionB[i] > versionA[i]) return 1;
-                        else if (versionA[i] > versionB[i]) return 2;
+                        if (versionB[i] > versionA[i]) return StatusCode.UpdateAvailable;
+                        else if (versionA[i] > versionB[i]) return StatusCode.AheadOfRemote;
                     }
-                    else if (versionB.Count > versionA.Count) return 1;
-                    else if (versionB.Count < versionA.Count) return 1;
+                    else if (versionB.Count > versionA.Count) return StatusCode.UpdateAvailable;
+                    else if (versionB.Count < versionA.Count) return StatusCode.AheadOfRemote;
                 }
-                return 0;
+                return StatusCode.Success;
             }
             catch
             {
-                return -1;
+                return StatusCode.GenericError;
             }
             
 
@@ -124,23 +126,22 @@ public static class Utils
         }
 
 
-        public static async Task<(int, string?)> getModVersionUrl(ModManager.Mod mod)
+        public static async Task<(StatusCode, string?)> getModVersionUrl(ModManager.Mod mod)
         {
             string modinfoPath = Path.Combine(mod.path, "modinfo.json");
-            if (!File.Exists(modinfoPath)) return (-20, null);
             Dictionary<string, object> dictionary = File.ReadAllText(modinfoPath).dictionaryFromJson();
             if (dictionary == null)
             {
-                return (-21, null);
+                return (StatusCode.ModInfoNotReadable, null);
             }
             if (dictionary.ContainsKey("update_url"))
             {
                 Debug.Log("found an update url !");
-                return (0, dictionary["update_url"].ToString());
+                return (StatusCode.Success, dictionary["update_url"].ToString());
             }
             else
             {
-                return (-22, null);
+                return (StatusCode.NoUpdateUrlKey, null);
             }
         }
 
@@ -172,95 +173,74 @@ public static class Utils
 
                 }
                 baseDir.Delete(true);
+        }
 
-            
-
-    }
-    public static async Task<int> DownloadFileIfNewerAsync(string url, string localPath)
-    {
-        if (offlineMode) return -10;
-        using HttpClient client = new HttpClient();
-        try
+        public static async Task<StatusCode> IsRemoteFileNewer(string url)
         {
-            // Send a HEAD request to get the ETag header
-            var headResponse = await client.SendAsync(new HttpRequestMessage(HttpMethod.Head, url));
-            headResponse.EnsureSuccessStatusCode();
+            string tempFilePath = Path.Combine(ModsUpdater.THISMODPATH, url.Split('/').Last()); // something.zip
+            Console.WriteLine($"is rm file newer ? {url} compared to {tempFilePath}");
+            if (!File.Exists(tempFilePath)) return StatusCode.LocalFileNotFound;
 
-            // Get the ETag header
-            if (headResponse.Headers.ETag != null)
+
+            try
+            {
+                using HttpClient client = new();
+
+                // Check if the file exists and get its last modified time
+                DateTime lastModified = File.GetLastWriteTime(tempFilePath);
+
+                // Send a HEAD request to get the last modified date of the remote file
+                client.DefaultRequestHeaders.Add("If-Modified-Since", lastModified.ToString("R"));
+                var response = await client.GetAsync(url, HttpCompletionOption.ResponseHeadersRead);
+
+                if (response.StatusCode == System.Net.HttpStatusCode.NotModified)
                 {
-                    string remoteETag = headResponse.Headers.ETag.Tag.Trim('"');
-
-                    // Check if the local file exists
-                    if (File.Exists(localPath))
-                    {
-                        // Read the local ETag from a file or a simple text file
-                        string localETagPath = localPath + ".etag";
-                        string localETag = File.Exists(localETagPath) ? File.ReadAllText(localETagPath) : null;
-
-                        // Compare the ETags
-                        if (remoteETag != localETag)
-                        {
-                            Console.WriteLine("Remote file is newer. Downloading...");
-                            await DownloadFileAsync(url, localPath);
-                            // Update the local ETag
-                            File.WriteAllText(localETagPath, remoteETag);
-                            return 0; // File was downloaded
-                        }
-                        else
-                        {
-                            return 1; // Local file is up to date
-                        }
-                    }
-                    else
-                    {
-                        // If the local file does not exist, download it
-                        int dlres = await DownloadFileAsync(url, localPath);
-                        if (dlres != 0) return dlres;
-                        // Save the ETag
-                        File.WriteAllText(localPath + ".etag", remoteETag);
-                        return 0; // File was downloaded
-                    }
+                    return StatusCode.LocalFileUpToDate; // File is not modified, no download needed
                 }
-                else
-                {
-                    return -12; // Error occurred
-                }
+                else return StatusCode.UpdateAvailable;
+            }
+            catch (System.Net.Sockets.SocketException nex)
+            {
+                offlineMode = true;
+                UnityEngine.Debug.LogError(nex);
+                return StatusCode.Offline; // Offline
             }
             catch (Exception ex)
             {
-                return -11; // Error occurred
+                UnityEngine.Debug.LogError(ex);
+                return StatusCode.GenericError;
             }
         }
 
-        public static async Task<int> DownloadFileAsync(string url, string localPath)
+
+
+        public static async Task<StatusCode> DownloadFileAsync(string url, string localPath)
         {
-            if (offlineMode) return -10;
-            using (HttpClient client = new HttpClient())
+            Console.WriteLine($"dwasync {url} {localPath}");
+            if (offlineMode) return StatusCode.GenericError;
+            using HttpClient client = new HttpClient();
+            try
             {
-                try
+                // Send a GET request to the specified URL
+                HttpResponseMessage response = await client.GetAsync(url);
+                response.EnsureSuccessStatusCode(); // Throw if not a success code.
+
+                // Read the response content as a byte array
+                byte[] fileBytes = await response.Content.ReadAsByteArrayAsync();
+
+                // Write the byte array to a file asynchronously using FileStream
+                using (FileStream fs = new FileStream(localPath, FileMode.Create, FileAccess.Write, FileShare.None))
                 {
-                    // Send a GET request to the specified URL
-                    HttpResponseMessage response = await client.GetAsync(url);
-                    response.EnsureSuccessStatusCode(); // Throw if not a success code.
-
-                    // Read the response content as a byte array
-                    byte[] fileBytes = await response.Content.ReadAsByteArrayAsync();
-
-                    // Write the byte array to a file asynchronously using FileStream
-                    using (FileStream fs = new FileStream(localPath, FileMode.Create, FileAccess.Write, FileShare.None))
-                    {
-                        await fs.WriteAsync(fileBytes, 0, fileBytes.Length);
-                    }
-
-                    return 0;
-
+                    await fs.WriteAsync(fileBytes, 0, fileBytes.Length);
                 }
-                catch (Exception ex)
-                {
-                    Console.WriteLine(ex);
-                    return -3;
-                }
+
+                return StatusCode.Success;
+
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex);
+                return StatusCode.GenericError;
             }
         }
         
@@ -272,116 +252,107 @@ public static class Utils
         /// <param name="url"></param>
         /// <param name="modPath"></param>
         /// <returns></returns>
-        public static async Task<int> GetUpdateAndUnzip(string url, string modPath)
+        public static async Task<StatusCode> GetUpdateAndUnzip(string url, string modPath)
         {
-            Console.WriteLine("Trying to update " + url +" "+modPath);
-            if (offlineMode) return -10;
-            if (url == null || modPath == null) return -2;
-            if (!url.EndsWith("zip")) return -13;
+            Console.WriteLine("Trying to update " + url +" into "+modPath);
+            if (offlineMode) return StatusCode.Offline;
+            if (url == null || modPath == null) return StatusCode.InvalidParameters;
+            if (!url.EndsWith("zip")) return StatusCode.UpdateUrlNotZip;
             var targetModPath = new DirectoryInfo(modPath);
 
             if (!(targetModPath.Parent.FullName == ModsUpdater.MODSPATH))
             {
-
-                return -23;
+                return StatusCode.InvalidTargetPath;
             }
 
             string fileName = url.Split('/').Last();
 
-            string tempFilePath = Path.Combine(ModsUpdater.THISMODPATH, "." + fileName);
+            string tempFilePath = Path.Combine(ModsUpdater.THISMODPATH,fileName);
 
-            int dlres = await DownloadFileAsync(url, tempFilePath);
-            if (dlres != 0) return dlres; // dl failed
-
-            Console.WriteLine(ModsUpdater.MODSPATH);
+            StatusCode dlres = await DownloadFileAsync(url, tempFilePath);
+            if (dlres != StatusCode.Success) return dlres; // dl failed
 
             RecursiveDelete(targetModPath);
-            if (CountTopLevelFilesInZip(tempFilePath) != 0) // this means that at least modinfo.json is there. So extract to mods/ModName/
+            // maybe more structure checks should be done. Meh.
+            if (IsModinfoTopLevel(tempFilePath) == true) //  extract to mods/ModName/
             {
                 string newModDir = Path.Combine(ModsUpdater.MODSPATH, fileName.Replace(".zip", ""));
                 Directory.CreateDirectory(newModDir);
                 System.IO.Compression.ZipFile.ExtractToDirectory(tempFilePath, newModDir);
 
             }
-            else // there is only a dir insize top level of zip. extract to mods/
+            else System.IO.Compression.ZipFile.ExtractToDirectory(tempFilePath, ModsUpdater.MODSPATH);
 
-
-                System.IO.Compression.ZipFile.ExtractToDirectory(tempFilePath, ModsUpdater.MODSPATH);
-
-            return 0;
+            return StatusCode.Success;
         }
 
-        public static int CountTopLevelFilesInZip(string zipFilePath)
+        public static bool IsModinfoTopLevel(string zipFilePath)
         {
-            int fileCount = 0;
 
             using (var archive = ZipFile.OpenRead(zipFilePath))
             {
                 foreach (ZipArchiveEntry entry in archive.Entries)
                 {
-                    if (!string.IsNullOrEmpty(entry.Name) && entry.FullName.Split('/').Length == 1) // Check if it's not a directory & not in a dir
+                    if (entry.Name.Equals("modinfo.json", StringComparison.OrdinalIgnoreCase) && entry.FullName.Split('/').Length == 1) // Check if it's not a directory & not in a dir
                     {
-                        fileCount++;
+                        return true;
                     }
                 }
             }
 
-            return fileCount;
+            return false;
         }
 
     }
-    public static class StatusInfo
-    {
-        public static string get(int StatusID)
-        {
-            string statusClass = "";
-            string statusBody = "";
-
-            if (StatusID >= 0)
-            {
-                if (StatusID < 10) statusClass = "General";
-
-            }
-            else
-            {
-                if (StatusID > -10) statusClass = "general";
-                else if (StatusID > -20) statusClass = "Networking";
-                else if (StatusID > -30) statusClass = "File handling";
-            }
-
-            switch (StatusID)
-            {
-                case 1: statusBody = "local file is up-to-date"; break;
-                case 0: statusBody = "Success"; break;
-
-                case -1: statusBody = "generic error"; break;
-                case -2: statusBody = "supplied parameters are not valid"; break;
-                case -3: statusBody = "network request failed, or probelms writing file"; break;
-
-                case -10: statusBody = "Offline"; break;
-                case -13: statusBody = "update url is not a zip"; break;
-                case -11: statusBody = "could not request etag. offline ?"; break;
-                case -12: statusBody = "no etag found in response"; break;
-
-
-
-                case -20: statusBody = "Could not find modinfo"; break;
-                case -21: statusBody = "modinfo was not readable or json-parsable"; break;
-                case -22: statusBody = "no updateUrl key found"; break;
-                case -23: statusBody = "target path to delete and re-create seems wrong"; break;
-            }
-
-
-
-
-            return statusClass + " : " + statusBody;
-        }
-    }
-
 
     public static UnityEngine.Color C2c(System.Drawing.Color c) {
         return new UnityEngine.Color(c.A, c.R, c.G, c.B);
     }
 
+  public static string GetErrorMessage(StatusCode code)
+    {
+        return ErrorMessages[code];
+    }
 
+ private static readonly Dictionary<StatusCode, string> ErrorMessages = new Dictionary<StatusCode, string>
+    {
+        // { StatusCode.Success, "Success" },
+        { StatusCode.LocalFileUpToDate, "Local file is up-to-date" },
+        { StatusCode.UpdateAvailable, "A remote update is available" },
+        { StatusCode.GenericError, "Generic error. Check console logs." },
+        { StatusCode.InvalidParameters, "Supplied parameters are not valid" },
+        { StatusCode.NetworkRequestFailed, "Network request failed for an unknown reason." },
+        { StatusCode.LocalFileNotFound, "Local file does not exist" },
+        { StatusCode.Offline, "Offline" },
+        { StatusCode.UpdateUrlNotZip, "Update URL is not a zip" },
+        { StatusCode.ModInfoNotFound, "Could not find modinfo" },
+        { StatusCode.ModInfoNotReadable, "Modinfo was not readable or JSON-parsable" },
+        { StatusCode.NoUpdateUrlKey, "No updateUrl key found" },
+        { StatusCode.InvalidTargetPath, "Target path to delete and re-create seems wrong" },
+        { StatusCode.AheadOfRemote, "Local file version is ahead of remote" },
+    };
+
+    public enum StatusCode
+    {
+        Success = 0,
+        GenericError = -1,
+
+        LocalFileNotFound,
+        LocalFileUpToDate,
+        UpdateAvailable,
+        
+        InvalidParameters,
+        UpdateUrlNotZip,
+        InvalidTargetPath,
+        
+        NetworkRequestFailed,
+        Offline,
+        
+        ModInfoNotFound,
+        ModInfoNotReadable,
+        
+        NoUpdateUrlKey,
+        AheadOfRemote,
+    }
 }
+
