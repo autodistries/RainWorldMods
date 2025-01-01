@@ -14,7 +14,12 @@ namespace ModsUpdater;
 
 
 /// <summary>
-/// this class manages remote sources. well, it is not ready for anything else than github. for now at least
+///this class is stupid
+/// it's supposed to manage data about remote foreign mods
+/// reallisticly, it should say update available if remote file is newer than local
+/// This means NO VERSION for the remote mod, which kinda sucks
+/// alternative would be to download the zip, parse modinfo.json, and get version from here. THis means download zip every tiem. stupid.
+/// 
 /// </summary>
 public class RemoteModSourceInfo
 {

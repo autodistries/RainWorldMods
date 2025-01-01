@@ -155,25 +155,61 @@ public static class Utils
 
 
 
-        public static void RecursiveDelete(DirectoryInfo baseDir)
+public static void RecursiveDelete(DirectoryInfo baseDir)
+{
+    if (!baseDir.Exists)
+    {
+        Console.WriteLine($"Directory does not exist: {baseDir.FullName}");
+        return;
+    }
+
+    try
+    {
+        // Delete all files in the directory
+        foreach (FileInfo file in baseDir.GetFiles())
         {
-            if (!baseDir.Exists)
-                return;
-
-            
-                foreach (var file in baseDir.EnumerateFiles())
-                {
-                    file.Delete();
-                }
-                foreach (var item in baseDir.EnumerateDirectories())
-                {
-
-                    RecursiveDelete(item);
-
-
-                }
-                baseDir.Delete(true);
+            try
+            {
+                file.Delete();
+                Console.WriteLine($"Deleted file: {file.FullName}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error deleting file {file.FullName}: {ex.Message}");
+            }
         }
+
+        // Delete all subdirectories recursively
+        foreach (DirectoryInfo subdirectory in baseDir.GetDirectories())
+        {
+            try
+            {
+                RecursiveDelete(subdirectory);
+                Console.WriteLine($"Deleted subdirectory: {subdirectory.FullName}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error deleting subdirectory {subdirectory.FullName}: {ex.Message}");
+            }
+        }
+
+        // Delete the current directory
+        try
+        {
+            baseDir.Delete(true);
+            Console.WriteLine($"Deleted directory: {baseDir.FullName}");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error deleting directory {baseDir.FullName}: {ex.Message}");
+        }
+    }
+    catch (UnauthorizedAccessException)
+    {
+        Console.WriteLine($"Access denied: {baseDir.FullName}");
+    }
+}
+
 
         public static async Task<StatusCode> IsRemoteFileNewer(string url)
         {
@@ -241,6 +277,31 @@ public static class Utils
             {
                 Console.WriteLine(ex);
                 return StatusCode.GenericError;
+            }
+        }
+
+
+
+
+    public static async Task<long> GetRemoteFileSize(string url)
+        {
+            if (offlineMode) return 0;
+            using HttpClient client = new HttpClient();
+            try
+            {
+                // Send a GET request to the specified URL
+                HttpResponseMessage headResponse = await client.SendAsync(new HttpRequestMessage(HttpMethod.Head, url));
+                headResponse.EnsureSuccessStatusCode(); // Throw if not a success code.
+
+                // Read the response content as a byte array
+                long totalSize = headResponse.Content.Headers.ContentLength ?? -1;
+                return totalSize;
+
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex);
+                return 0;
             }
         }
         

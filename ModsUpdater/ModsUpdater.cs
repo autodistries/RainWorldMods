@@ -52,17 +52,10 @@ public partial class ModsUpdater : BaseUnityPlugin
 
     static bool currentlyLoadingRainDB = false;
     private static bool doneReading = false;
-    private Dictionary<string, (DateTime, ServerMod)> UpdateCheckLog; // cached foreign updates info
-    private string currentlyPreviewedModId;
+    private Dictionary<string, (DateTime, ServerMod)>? UpdateCheckLog; // cached foreign updates info
+    private string? currentlyPreviewedModId;
     // readonly ModOptions modOptions;
-
-
-
-    public ModsUpdater()
-    {
-
-        //modOptions = new ModOptions(this, Logger);
-    }
+    
 
 
 
@@ -71,7 +64,7 @@ public partial class ModsUpdater : BaseUnityPlugin
     private void OnEnable()
     {
         if (done) return;
-        base.Logger.LogInfo("Hooking setup methods...");
+        Logger.LogInfo("Hooking setup methods...");
         On.RainWorld.OnModsInit += RainWorldOnOnModsInitDetour;
         On.ModManager.WrapModInitHooks += LoadLocalMods; // discovers existing local mods (by native Mods manager)
 
@@ -231,7 +224,9 @@ public partial class ModsUpdater : BaseUnityPlugin
 
         if (currentObject.Status == ModStatusTypes.Updatable)
         {
+            LblPreviewUpdateButton!.greyedOut = false;
             LblPreviewUpdateButton!.Show();
+            
         }
         else LblPreviewUpdateButton!.Hide();
 
@@ -334,7 +329,7 @@ public partial class ModsUpdater : BaseUnityPlugin
             Graphics.LblPreviewUpdateStatus = new OpLabel(new Vector2(120f, 485f), new Vector2(560f, 30f), "hi");
             LblPreviewUpdateButton = new OpSimpleImageButton(new Vector2(258f, 485f), new Vector2(30f, 30f), "keyShiftB")
             {
-                description = "Update X mod, probably"
+                description = "Update this mod"
             };
             LblPreviewUpdateButton.Hide();
             LblPreviewUpdateButton.OnClick += async (UIfocusable targetBtn) =>
@@ -345,6 +340,7 @@ public partial class ModsUpdater : BaseUnityPlugin
                 if (ModObjects.ContainsKey(currentlyPreviewedModId))
                 {
                     ModHolder mod = ModObjects[currentlyPreviewedModId];
+                    targetBtn.description+=$"({ (await Utils.FileManager.GetRemoteFileSize(mod.ServerMod!.Link)) / 1024 }KB)";
                     Utils.StatusCode res = await mod.triggerUpdate();
                     if (res == Utils.StatusCode.Success)
                     {
