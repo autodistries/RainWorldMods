@@ -49,30 +49,47 @@ public partial class SleepySlugcatto : BaseUnityPlugin
 
         LocalLogSource.LogInfo("Hooking setup methods...");
 
-        try {
+        try
+        {
 
-        On.Player.Update += CheckForSleepySlugcat; //handles main logic
-        On.Player.CanIPickThisUp += CanWeReallyGrabThatRn; // prevent grabbing when sleeping
-        On.Player.Collide += WtfWeGotHit; //stop sleeping if something collides with us
-        On.Player.Die += WhyDidIDie; // stop sleeping right befroe we die obviously
-        On.Player.JollyEmoteUpdate += NoYouDont; // If jolly is enabled, its emote thing will overlap with our sleep thing and uncurl
+            On.Player.Update += CheckForSleepySlugcat; //handles main logic
+            On.Player.CanIPickThisUp += CanWeReallyGrabThatRn; // prevent grabbing when sleeping
+            On.Player.Collide += WtfWeGotHit; //stop sleeping if something collides with us
+            On.Player.Die += WhyDidIDie; // stop sleeping right befroe we die obviously
+            On.Player.JollyEmoteUpdate += NoYouDont; // If jolly is enabled, its emote thing will overlap with our sleep thing and uncurl
 
-        On.RainWorldGame.ctor += ResetDebuggingView; // reset variables and other things when re-entering the game
+            On.RainWorldGame.ctor += ResetDebuggingView; // reset variables and other things when re-entering the game
 
-        On.RainWorld.OnModsInit += RainWorldOnOnModsInitDetour; // mod options interface
-} catch (Exception e){
-    Logger.LogError(e);
-    Logger.LogError("this mod has been disabled.");
-      On.Player.Update -= CheckForSleepySlugcat; //handles main logic
-        On.Player.CanIPickThisUp -= CanWeReallyGrabThatRn; // prevent grabbing when sleeping
-        On.Player.Collide -= WtfWeGotHit; //stop sleeping if something collides with us
-        On.Player.Die -= WhyDidIDie; // stop sleeping right befroe we die obviously
-        On.Player.JollyEmoteUpdate -= NoYouDont; // If jolly is enabled, its emote thing will overlap with our sleep thing and uncurl
+            On.RainWorld.OnModsInit += RainWorldOnOnModsInitDetour; // mod options interface
+        }
+        catch (Exception e)
+        {
+            Logger.LogError(e);
+            Logger.LogError("this mod has been disabled.");
+            On.Player.Update -= CheckForSleepySlugcat; //handles main logic
+            On.Player.CanIPickThisUp -= CanWeReallyGrabThatRn; // prevent grabbing when sleeping
+            On.Player.Collide -= WtfWeGotHit; //stop sleeping if something collides with us
+            On.Player.Die -= WhyDidIDie; // stop sleeping right befroe we die obviously
+            On.Player.JollyEmoteUpdate -= NoYouDont; // If jolly is enabled, its emote thing will overlap with our sleep thing and uncurl
 
-        On.RainWorldGame.ctor -= ResetDebuggingView; // reset variables and other things when re-entering the game
+            On.RainWorldGame.ctor -= ResetDebuggingView; // reset variables and other things when re-entering the game
 
-        On.RainWorld.OnModsInit -= RainWorldOnOnModsInitDetour; 
-}
+            On.RainWorld.OnModsInit -= RainWorldOnOnModsInitDetour;
+        }
+    }
+
+    private void OnDisable() {
+            clearLocalVariables();
+            On.Player.Update -= CheckForSleepySlugcat; //handles main logic
+            On.Player.CanIPickThisUp -= CanWeReallyGrabThatRn; // prevent grabbing when sleeping
+            On.Player.Collide -= WtfWeGotHit; //stop sleeping if something collides with us
+            On.Player.Die -= WhyDidIDie; // stop sleeping right befroe we die obviously
+            On.Player.JollyEmoteUpdate -= NoYouDont; // If jolly is enabled, its emote thing will overlap with our sleep thing and uncurl
+
+            On.RainWorldGame.ctor -= ResetDebuggingView; // reset variables and other things when re-entering the game
+
+            On.RainWorld.OnModsInit -= RainWorldOnOnModsInitDetour;
+
     }
 
 
