@@ -1,0 +1,11 @@
+{
+  "version": 2,
+  "dgSpecHash": "eD6i+VGMe/bi4pDx2IhA+JBJBFEGz/TI1SY/qhjs7MQLw0daHn/ppDRfBsLlXxUj5oRAvl07Zjw0mVJahti3LA==",
+  "success": true,
+  "projectFilePath": "/home/guigui/temp/RainWorldMods/ModsUpdater/ModsUpdater.csproj",
+  "expectedPackageFiles": [
+    "/home/guigui/.nuget/packages/microsoft.netframework.referenceassemblies/1.0.3/microsoft.netframework.referenceassemblies.1.0.3.nupkg.sha512",
+    "/home/guigui/.nuget/packages/microsoft.netframework.referenceassemblies.net48/1.0.3/microsoft.netframework.referenceassemblies.net48.1.0.3.nupkg.sha512"
+  ],
+  "logs": []
+}

@@ -1,0 +1,5 @@
+is_global = true
+build_property.RootNamespace = ModsUpdater
+build_property.ProjectDir = /home/guigui/temp/RainWorldMods/ModsUpdater/ConsciousModsUpdater/
+build_property.EnableComHosting = 
+build_property.EnableGeneratedComInterfaceComImportInterop = 

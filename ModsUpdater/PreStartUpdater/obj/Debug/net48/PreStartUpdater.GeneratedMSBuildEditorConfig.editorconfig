@@ -1,0 +1,5 @@
+is_global = true
+build_property.RootNamespace = PreStartUpdater
+build_property.ProjectDir = /home/guigui/temp/RainWorldMods/ModsUpdater/PreStartUpdater/
+build_property.EnableComHosting = 
+build_property.EnableGeneratedComInterfaceComImportInterop = 

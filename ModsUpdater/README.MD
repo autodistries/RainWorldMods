@@ -1,22 +1,18 @@
 The goal is to allow users to update their mods if they didn't install them from steam
 
-Things could be done from the remix menu interface
+Things are done from the remix interface
 
-There should be a selectable one-item box to choose between updatable mods & mods which IDs don't match anything from the source file
+- Workshop mods are NOT taken into account and will not be updated
+- On the Remix Stats menu, some stats are added about currently installed mods + an update all button
+- On each mod, a lil infobox to explain current status + an update button if updatable
+- Updates are pulled from raindb (syncs with workshop every two weeks) (local file is updated whenever an update is available)
 
-The source file should be fetched every two weeks automatically, and we'll add a button for users to fetch it manually (we will make it so it compares result)
 
 
+Below is stuff that is not implemented
+## ConsciousModsUpdater
+ This is the part that handles everything the user can see.
+- When clicking an update btn, the updates are downloaded and stored to be applied on next game start
 
-Here how it would be made:
- On menu open, check internet connection (or check only when trying to fetch blob)
- if connected & update is available, auto-download the updated file
-
- update mods list and sort them:
- - All
- - Update available
- - Not found
-
- Update all button will update updateable, then prompt a game restart
-
- ModsUpdater
+## PreStartUpdater
+- This part handles deleting previous mod folder, and unpacking previously downloaded zips
