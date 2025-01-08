@@ -436,11 +436,11 @@
   "project": {
     "version": "0.0.10",
     "restore": {
-      "projectUniqueName": "/home/guigui/temp/RainWorldMods/ModsUpdater/ModsUpdater.csproj",
+      "projectUniqueName": "/home/guigui/temp/RainWorldMods/ModsUpdater/ConsciousModsUpdater/ModsUpdater.csproj",
       "projectName": "ModsUpdater",
-      "projectPath": "/home/guigui/temp/RainWorldMods/ModsUpdater/ModsUpdater.csproj",
+      "projectPath": "/home/guigui/temp/RainWorldMods/ModsUpdater/ConsciousModsUpdater/ModsUpdater.csproj",
       "packagesPath": "/home/guigui/.nuget/packages/",
-      "outputPath": "/home/guigui/temp/RainWorldMods/ModsUpdater/obj/",
+      "outputPath": "/home/guigui/temp/RainWorldMods/ModsUpdater/ConsciousModsUpdater/obj/",
       "projectStyle": "PackageReference",
       "configFilePaths": [
         "/home/guigui/.nuget/NuGet/NuGet.Config"
@@ -455,8 +455,8 @@
         "net48": {
           "targetAlias": "net48",
           "projectReferences": {
-            "/home/guigui/temp/RainWorldMods/PreStartUpdater/PreStartUpdater.csproj": {
-              "projectPath": "/home/guigui/temp/RainWorldMods/PreStartUpdater/PreStartUpdater.csproj"
+            "/home/guigui/temp/RainWorldMods/ModsUpdater/PreStartUpdater/PreStartUpdater.csproj": {
+              "projectPath": "/home/guigui/temp/RainWorldMods/ModsUpdater/PreStartUpdater/PreStartUpdater.csproj"
             }
           }
         }

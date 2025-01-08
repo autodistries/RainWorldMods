@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "oIst8K/wDHCDHRYot8p5PBTVXmbCzcxxXDIPoIOoJKFzQPxz39dV27Y6D1dx//8rvX5MexcDEdZGf2wPMzGwcg==",
+  "dgSpecHash": "cT0lg3C2C64GgsbbpUSb+FHj9BynpY7dtqg6uiIF/esbHD8Pxea0f1cMQr3q6KMdU75Hi/k6He3P6dP1j+v7EA==",
   "success": true,
-  "projectFilePath": "/home/guigui/temp/RainWorldMods/PreStartUpdater/PreStartUpdater.csproj",
+  "projectFilePath": "/home/guigui/temp/RainWorldMods/ModsUpdater/PreStartUpdater/PreStartUpdater.csproj",
   "expectedPackageFiles": [
     "/home/guigui/.nuget/packages/microsoft.netframework.referenceassemblies/1.0.3/microsoft.netframework.referenceassemblies.1.0.3.nupkg.sha512",
     "/home/guigui/.nuget/packages/microsoft.netframework.referenceassemblies.net48/1.0.3/microsoft.netframework.referenceassemblies.net48.1.0.3.nupkg.sha512"

@@ -40,7 +40,8 @@ public static class Utils
 
                 return StatusCode.InvalidParameters;
             }
-            try {
+            try
+            {
                 List<Int32> versionA = VersionToList(a);
                 List<Int32> versionB = VersionToList(b);
 
@@ -54,15 +55,15 @@ public static class Utils
                     else if (versionB.Count > versionA.Count) return StatusCode.UpdateAvailable;
                     else if (versionB.Count < versionA.Count) return StatusCode.AheadOfRemote;
                 }
-                return StatusCode.Success;
+                return StatusCode.LocalFileUpToDate;
             }
             catch
             {
                 return StatusCode.GenericError;
             }
-            
 
-            
+
+
         }
 
         private static List<int> VersionToList(string a)
@@ -155,74 +156,6 @@ public static class Utils
 
 
 
-public static void RecursiveDelete(DirectoryInfo baseDir)
-{
-    
-    
-    if (!baseDir.Exists)
-    {
-        Console.WriteLine($"Directory does not exist: {baseDir.FullName}");
-        return;
-    }
-
-    try
-    {
-        // Delete all files in the directory
-        foreach (FileInfo file in baseDir.GetFiles())
-        {
-            try
-            {
-                if (!file.Exists) Console.WriteLine("We will be deleting a file that does not exists");
-                file.Refresh();
-                file.Delete();
-                Console.WriteLine($"Deleted file: {file.FullName}");
-                file.Refresh();
-
-                if (file.Exists) {Console.WriteLine("(actually we did not dzelete it lol)");
-                for (int i=0; i<5; i++) {
-                    Console.WriteLine("Tying again... "+i);
-                    file.Delete();
-                }
-                if (file.Exists) Console.WriteLine("giving up");
-                }
-
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error deleting file {file.FullName}: {ex.Message}");
-            }
-        }
-
-        // Delete all subdirectories recursively
-        foreach (DirectoryInfo subdirectory in baseDir.GetDirectories())
-        {
-            try
-            {
-                RecursiveDelete(subdirectory);
-                Console.WriteLine($"Deleted subdirectory: {subdirectory.FullName}");
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error deleting subdirectory {subdirectory.FullName}: {ex.Message}");
-            }
-        }
-
-        // Delete the current directory
-        try
-        {
-            baseDir.Delete(true);
-            Console.WriteLine($"Deleted directory: {baseDir.FullName}");
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Error deleting directory {baseDir.FullName}: {ex.Message}");
-        }
-    }
-    catch (UnauthorizedAccessException)
-    {
-        Console.WriteLine($"Access denied: {baseDir.FullName}");
-    }
-}
 
 
         public static async Task<StatusCode> IsRemoteFileNewer(string url)
@@ -297,7 +230,7 @@ public static void RecursiveDelete(DirectoryInfo baseDir)
 
 
 
-    public static async Task<long> GetRemoteFileSize(string url)
+        public static async Task<long> GetRemoteFileSize(string url)
         {
             if (offlineMode) return 0;
             using HttpClient client = new HttpClient();
@@ -318,7 +251,7 @@ public static void RecursiveDelete(DirectoryInfo baseDir)
                 return 0;
             }
         }
-        
+
         /// <summary>
         /// updates a mod. takes url of the zip of the mod
         /// and the path where the current mod is stored
@@ -327,9 +260,9 @@ public static void RecursiveDelete(DirectoryInfo baseDir)
         /// <param name="url"></param>
         /// <param name="modPath"></param>
         /// <returns></returns>
-        public static async Task<StatusCode> GetUpdateAndUnzip(string url, string modPath)
+        public static async Task<StatusCode> GetUpdateAndPrepareZip(string url, string modPath)
         {
-            Console.WriteLine("Trying to update " + url +" into "+modPath);
+            Console.WriteLine("Trying to update " + url + " into " + modPath);
             if (offlineMode) return StatusCode.Offline;
             if (url == null || modPath == null) return StatusCode.InvalidParameters;
             if (!url.EndsWith("zip")) return StatusCode.UpdateUrlNotZip;
@@ -342,54 +275,52 @@ public static void RecursiveDelete(DirectoryInfo baseDir)
 
             string fileName = url.Split('/').Last();
 
-            string tempFilePath = Path.Combine(ModsUpdater.THISMODPATH,fileName);
+            string tempFilePath = Path.Combine(ModsUpdater.THISMODPATH, fileName);
 
             StatusCode dlres = await DownloadFileAsync(url, tempFilePath);
             if (dlres != StatusCode.Success) return dlres; // dl failed
 
-            RecursiveDelete(targetModPath);
-            // maybe more structure checks should be done. Meh.
-            if (IsModinfoTopLevel(tempFilePath) == true) //  extract to mods/ModName/
-            {
-                string newModDir = Path.Combine(ModsUpdater.MODSPATH, fileName.Replace(".zip", ""));
-                Directory.CreateDirectory(newModDir);
-                System.IO.Compression.ZipFile.ExtractToDirectory(tempFilePath, newModDir);
-
-            }
-            else System.IO.Compression.ZipFile.ExtractToDirectory(tempFilePath, ModsUpdater.MODSPATH);
 
             return StatusCode.Success;
         }
 
-        public static bool IsModinfoTopLevel(string zipFilePath)
+        public static bool AddPendingUpdateEntry(string ModName, string ModPath, string ZipPath)
         {
+            bool createdFile = false;
+            string pendingUpdatesPath = Path.Combine(ModsUpdater.THISMODPATH, "pendingUpdates.txt");
 
-            using (var archive = ZipFile.OpenRead(zipFilePath))
-            {
-                foreach (ZipArchiveEntry entry in archive.Entries)
-                {
-                    if (entry.Name.Equals("modinfo.json", StringComparison.OrdinalIgnoreCase) && entry.FullName.Split('/').Length == 1) // Check if it's not a directory & not in a dir
-                    {
-                        return true;
-                    }
-                }
+            FileInfo pendingUpdates = new FileInfo(pendingUpdatesPath);
+
+            if (!pendingUpdates.Exists) {
+                FileStream newFileStream = pendingUpdates.Create();
+                newFileStream.Close();
+                createdFile = true;
             }
 
-            return false;
+            var appender = pendingUpdates.AppendText();
+            appender.Write($"\n{ModName}|{ModPath}|{ZipPath}\n");
+            appender.Close();
+
+
+
+            return createdFile;
         }
+
 
     }
 
-    public static UnityEngine.Color C2c(System.Drawing.Color c) {
+
+    public static UnityEngine.Color C2c(System.Drawing.Color c)
+    {
         return new UnityEngine.Color(c.A, c.R, c.G, c.B);
     }
 
-  public static string GetErrorMessage(StatusCode code)
+    public static string GetErrorMessage(StatusCode code)
     {
         return ErrorMessages[code];
     }
 
- private static readonly Dictionary<StatusCode, string> ErrorMessages = new Dictionary<StatusCode, string>
+    private static readonly Dictionary<StatusCode, string> ErrorMessages = new Dictionary<StatusCode, string>
     {
         // { StatusCode.Success, "Success" },
         { StatusCode.LocalFileUpToDate, "Local file is up-to-date" },
@@ -415,17 +346,17 @@ public static void RecursiveDelete(DirectoryInfo baseDir)
         LocalFileNotFound,
         LocalFileUpToDate,
         UpdateAvailable,
-        
+
         InvalidParameters,
         UpdateUrlNotZip,
         InvalidTargetPath,
-        
+
         NetworkRequestFailed,
         Offline,
-        
+
         ModInfoNotFound,
         ModInfoNotReadable,
-        
+
         NoUpdateUrlKey,
         AheadOfRemote,
     }

@@ -7,6 +7,7 @@ using Menu.Remix;
 using IL.Menu.Remix.MixedUI;
 using System.Collections.Generic;
 using UnityEngine;
+using System.Linq;
 
 
 namespace ModsUpdater;
@@ -78,7 +79,7 @@ public partial class ModsUpdater
                 ModStatusTypes.Unknown => C2c(System.Drawing.Color.OrangeRed),
                 ModStatusTypes.Dev => Color.cyan,
                 ModStatusTypes.Latest => Color.green,
-                ModStatusTypes.Updated => C2c(System.Drawing.Color.YellowGreen),
+                ModStatusTypes.UpdatedNeedsRestart => C2c(System.Drawing.Color.YellowGreen),
                 ModStatusTypes.Updatable => Color.yellow,
                 ModStatusTypes.Managed_By_Steam => Color.blue,
                 ModStatusTypes.Orphan => Color.grey,
@@ -95,9 +96,9 @@ public partial class ModsUpdater
                 VersionLabel.text = Mod.version + "->" + serverMod.Version;
                 return true;
             }
-            else if (status == ModStatusTypes.Updated && serverMod is not null)
+            else if (status == ModStatusTypes.UpdatedNeedsRestart && serverMod is not null)
             {
-                VersionLabel.text = "updated to " + serverMod.Version;
+                VersionLabel.text = "restart game ->" + serverMod.Version;
                 return true;
             }
             return false;
@@ -135,11 +136,17 @@ public partial class ModsUpdater
         public async Task<StatusCode> triggerUpdate()
         {
             if (serverMod is null || VersionLabel is null) return StatusCode.InvalidParameters;
-            Console.WriteLine("Sterting update process for " + Mod.id);
-            Utils.StatusCode res = await FileManager.GetUpdateAndUnzip(serverMod.Link, Mod.path);
+            Console.WriteLine("Starting update process for " + Mod.id);
+            Utils.StatusCode res = await FileManager.GetUpdateAndPrepareZip(serverMod.Link, Mod.path);
             if (res == StatusCode.Success)
             {
-                status = ModStatusTypes.Latest;
+                string fileName = serverMod.Link.Split('/').Last();
+                string tempFilePath = System.IO.Path.Combine(ModsUpdater.THISMODPATH, fileName);
+                var res1 = FileManager.AddPendingUpdateEntry(mod.name, Mod.path, tempFilePath);
+                if (res1) {
+                    Console.WriteLine("We should move preloader to patchers folder");
+                }
+                status = ModStatusTypes.UpdatedNeedsRestart;
             }
             return res;
         }
@@ -163,7 +170,7 @@ public partial class ModsUpdater
             Dev, // mod is ahead with remote
             Latest, // mod is up-to-date with remote
             Updatable, // a remote update was found
-            Updated, //mod was updated this session
+            UpdatedNeedsRestart, //mod was updated this session
             Orphan, // no remote sources have picked up this mod
             Unknown, // no version info or bersionning disabled
             Managed_By_Steam

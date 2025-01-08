@@ -88,7 +88,7 @@ public partial class ModsUpdater : BaseUnityPlugin
 
         initForeignUpdateCheckLog(); // gather cached data from local file for remote sources
         await Task.Run(ParseAndQueryWorkshopModlist); // get workshop ServerMods
-        if (false) await ParseAndQueryForeignModList(); // get other ServerMods
+        if (false) ParseAndQueryForeignModList(); // get other ServerMods
         matchLocalAndServerMods();
 
     }
@@ -217,8 +217,9 @@ public partial class ModsUpdater : BaseUnityPlugin
         {
             Graphics.LblPreviewUpdateStatus!.text += " (Souce: " + currentObject.ServerMod!.Source + ")";
         }
-        else if (currentObject.Status == ModStatusTypes.Updated)
+        else if (currentObject.Status == ModStatusTypes.UpdatedNeedsRestart)
         {
+            Graphics.ModUpdaterStatus = "Restart the game to apply update";
             Graphics.LblPreviewUpdateStatus!.text = "Restart the game to apply update";
         }
 
@@ -344,11 +345,9 @@ public partial class ModsUpdater : BaseUnityPlugin
                     Utils.StatusCode res = await mod.triggerUpdate();
                     if (res == Utils.StatusCode.Success)
                     {
-                        mod.Status = ModStatusTypes.Updated;
-                        targetBtn.greyedOut = false;
-                        targetBtn.description = "OK !";
+                        targetBtn.description = "Restart game to apply updates !";
                         mod.updateLabel();
-                        Graphics.LblPreviewUpdateStatus.text = Graphics.LblPreviewUpdateStatus.text.Split('>').Length == 2 ? Graphics.LblPreviewUpdateStatus.text.Split('>')[1].Trim() : Graphics.LblPreviewUpdateStatus.text;
+                        Graphics.LblPreviewUpdateStatus.text = Graphics.LblPreviewUpdateStatus.text.Split('>').Length == 2 ?Graphics.LblPreviewUpdateStatus.text.Split('>')[1].Trim() : Graphics.LblPreviewUpdateStatus.text;
 
                     }
                     else
@@ -497,7 +496,7 @@ public partial class ModsUpdater : BaseUnityPlugin
     /// the check is only done if the mod is not already associated to a Servermod and if update was last checked more than a day ago
     /// </summary>
     /// <returns></returns>
-    private async Task ParseAndQueryForeignModList()
+    private void ParseAndQueryForeignModList()
     {
         if (Utils.FileManager.offlineMode) return;
         int totalModsCount = ModObjects.Count;

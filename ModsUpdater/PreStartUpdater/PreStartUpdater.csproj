@@ -1,8 +1,12 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
+        <LangVersion>11</LangVersion>      
+          <DebugSymbols>False</DebugSymbols>
+        <DebugType>None</DebugType>
+
     <TargetFramework>net48</TargetFramework>
-    <OutputPath>./$(AssemblyName)/plugins/</OutputPath> <!-- Set your desired output path -->
+    <OutputPath>./out</OutputPath> <!-- Set your desired output path -->
     <RWDir>$(HOME)/.local/share/Steam/steamapps/common/Rain World/</RWDir> <!-- The path where your Rain World executable is stored -->
   </PropertyGroup>
 
@@ -10,7 +14,16 @@
    <ItemGroup>
         <Reference Include="$(RWDir)/BepInEx/core/*">
         <HintPath>$(RWDir)/BepInEx/core/*.dll</HintPath>
+        <Private>true</Private>
+
+        </Reference>
+        <Reference Include="./libs/*.dll">
+        <Private>false</Private>
         </Reference>
    </ItemGroup>
+
+
+
+
 
 </Project>

@@ -420,11 +420,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "/home/guigui/temp/RainWorldMods/PreStartUpdater/PreStartUpdater.csproj",
+      "projectUniqueName": "/home/guigui/temp/RainWorldMods/ModsUpdater/PreStartUpdater/PreStartUpdater.csproj",
       "projectName": "PreStartUpdater",
-      "projectPath": "/home/guigui/temp/RainWorldMods/PreStartUpdater/PreStartUpdater.csproj",
+      "projectPath": "/home/guigui/temp/RainWorldMods/ModsUpdater/PreStartUpdater/PreStartUpdater.csproj",
       "packagesPath": "/home/guigui/.nuget/packages/",
-      "outputPath": "/home/guigui/temp/RainWorldMods/PreStartUpdater/obj/",
+      "outputPath": "/home/guigui/temp/RainWorldMods/ModsUpdater/PreStartUpdater/obj/",
       "projectStyle": "PackageReference",
       "configFilePaths": [
         "/home/guigui/.nuget/NuGet/NuGet.Config"
