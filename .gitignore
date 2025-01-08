@@ -2,4 +2,5 @@
 obj/
 libs/
 out/
+bin/
 HealthBars*
