@@ -10,7 +10,6 @@ namespace PreStartUpdater;
 
 public static class FileManager
 {
-
     public static bool RecursiveDelete(DirectoryInfo baseDir, bool fake=false)
     {
         

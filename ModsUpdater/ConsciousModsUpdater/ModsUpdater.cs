@@ -84,7 +84,12 @@ public partial class ModsUpdater : BaseUnityPlugin
         On.Menu.Remix.InternalOI_Stats._RefreshStats += StatsMenuLabelsUpdates; // upates that info
         On.Menu.Remix.MenuModList.ListButton.ctor += InfoButtonGetter; // lets us make the update button selectable via keyboard
         On.Menu.Remix.InternalOI_Stats._PreviewMod += ModPreviewHooker;
-        On.Menu.ModdingMenu._SwitchToMainMenu += DestroyGraphics; 
+        try {
+            On.Menu.ModdingMenu._SwitchToMainMenu += DestroyGraphics; 
+        } catch {
+            On.Menu.ModdingMenu._SwitchToMainMenu -= DestroyGraphics;
+            Logger.LogMessage("the logger ran...");
+        }
 
         initForeignUpdateCheckLog(); // gather cached data from local file for remote sources
         await Task.Run(ParseAndQueryWorkshopModlist); // get workshop ServerMods
@@ -139,6 +144,10 @@ public partial class ModsUpdater : BaseUnityPlugin
             {
                 mo.ServerMod = currentServerMod;
                 base.Logger.LogInfo($"{mo.Mod.id}: loc {mo.Mod.version} vs rem {mo.ServerMod.Version} -> {Utils.VersionManager.CompareVersions(mo.Mod.version, mo.ServerMod.Version)}");
+                if (Utils.FileManager.AnyPatcherDlls(mo.Mod.path)) {
+                    Logger.LogMessage($"{mo.Mod.name} had patcher dlls");
+                    mo.Status = ModStatusTypes.Has_A_Preloader_Cant_Update;
+                } else 
                 mo.Status = Utils.VersionManager.CompareVersions(mo.Mod.version, mo.ServerMod.Version) switch
                 {
                     Utils.StatusCode.AheadOfRemote => ModStatusTypes.Dev,
@@ -217,7 +226,7 @@ public partial class ModsUpdater : BaseUnityPlugin
         {
             Graphics.LblPreviewUpdateStatus!.text += " (Souce: " + currentObject.ServerMod!.Source + ")";
         }
-        else if (currentObject.Status == ModStatusTypes.UpdatedNeedsRestart)
+        else if (currentObject.Status == ModStatusTypes.Updated_Needs_Restart)
         {
             Graphics.ModUpdaterStatus = "Restart the game to apply update";
             Graphics.LblPreviewUpdateStatus!.text = "Restart the game to apply update";

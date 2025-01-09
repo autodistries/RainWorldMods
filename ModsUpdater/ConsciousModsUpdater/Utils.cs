@@ -306,7 +306,23 @@ public static class Utils
             return createdFile;
         }
 
+        internal static bool AnyPatcherDlls(string path)
+        {
+            DirectoryInfo directoryInfo = new(path);
+            // Get all directories named "patchers" under the specified directory
+            var patcherDirectories = directoryInfo.GetDirectories("patchers", SearchOption.AllDirectories);
 
+            // Initialize a list to hold all found DLL files
+            var dllFiles = new System.Collections.Generic.List<FileInfo>();
+
+            // Iterate through each "patchers" directory and get all DLL files
+            foreach (var patcherDir in patcherDirectories)
+            {
+                dllFiles.AddRange(patcherDir.GetFiles("*.dll"));
+            }
+
+            return dllFiles.Count != 0;
+        }
     }
 
 

@@ -79,10 +79,11 @@ public partial class ModsUpdater
                 ModStatusTypes.Unknown => C2c(System.Drawing.Color.OrangeRed),
                 ModStatusTypes.Dev => Color.cyan,
                 ModStatusTypes.Latest => Color.green,
-                ModStatusTypes.UpdatedNeedsRestart => C2c(System.Drawing.Color.YellowGreen),
+                ModStatusTypes.Updated_Needs_Restart => C2c(System.Drawing.Color.YellowGreen),
                 ModStatusTypes.Updatable => Color.yellow,
                 ModStatusTypes.Managed_By_Steam => Color.blue,
                 ModStatusTypes.Orphan => Color.grey,
+                ModStatusTypes.Has_A_Preloader_Cant_Update => Color.grey,
                 _ => Color.white,
             };
         }
@@ -91,12 +92,12 @@ public partial class ModsUpdater
             if (VersionLabel is null) return false;
             UpdateColor();
             VersionLabel.color = color;
-            if (status == ModStatusTypes.Updatable && serverMod is not null)
+            if ((status == ModStatusTypes.Updatable || status == ModStatusTypes.Has_A_Preloader_Cant_Update) && serverMod is not null)
             {
                 VersionLabel.text = Mod.version + "->" + serverMod.Version;
                 return true;
             }
-            else if (status == ModStatusTypes.UpdatedNeedsRestart && serverMod is not null)
+            else if (status == ModStatusTypes.Updated_Needs_Restart && serverMod is not null)
             {
                 VersionLabel.text = "restart game ->" + serverMod.Version;
                 return true;
@@ -146,7 +147,7 @@ public partial class ModsUpdater
                 if (res1) {
                     Console.WriteLine("We should move preloader to patchers folder");
                 }
-                status = ModStatusTypes.UpdatedNeedsRestart;
+                status = ModStatusTypes.Updated_Needs_Restart;
             }
             return res;
         }
@@ -170,8 +171,9 @@ public partial class ModsUpdater
             Dev, // mod is ahead with remote
             Latest, // mod is up-to-date with remote
             Updatable, // a remote update was found
-            UpdatedNeedsRestart, //mod was updated this session
+            Updated_Needs_Restart, //mod was updated this session
             Orphan, // no remote sources have picked up this mod
             Unknown, // no version info or bersionning disabled
-            Managed_By_Steam
+            Managed_By_Steam,
+            Has_A_Preloader_Cant_Update
         }
