@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("ModsUpdater")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("0.0.10.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("0.0.10+c51f6250a2e75990920d8c20246b6661e62bb366")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("0.0.10+b36094b51494ed068616c54101d6504188e1fbd1")]
 [assembly: System.Reflection.AssemblyProductAttribute("Mods Updater")]
 [assembly: System.Reflection.AssemblyTitleAttribute("ModsUpdater")]
 [assembly: System.Reflection.AssemblyVersionAttribute("0.0.10.0")]
