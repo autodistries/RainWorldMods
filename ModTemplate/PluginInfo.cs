@@ -1,3 +1,4 @@
+// This file was generated on build by the .csproj
 namespace ModName
 {
     public static class PluginInfo
