@@ -2,8 +2,9 @@
 using UnityEngine;
 using static StepByStep.PluginInfo;
 namespace StepByStep;
-using BepInEx.Logging;
 
+using System;
+using BepInEx.Logging;
 
 [BepInPlugin(PLUGIN_GUID, PLUGIN_NAME, PLUGIN_VERSION)]
 
@@ -37,6 +38,8 @@ public partial class StepByStep : BaseUnityPlugin
     private ModOptions Options;
 
     private bool diffKeypresses = true;
+
+    // line 280854 SubTrack.source(AudioSource).Stop()
     #endregion opts
 
 
@@ -58,7 +61,32 @@ public partial class StepByStep : BaseUnityPlugin
     {
         On.RainWorld.OnModsInit += OnModsInitDetour;
         On.RainWorld.Update += UpdateStopper;
+        On.Music.Song.Update += MusicUpdateStopper; // prevents musics from being skipped if stepping
     }
+
+    private void MusicUpdateStopper(On.Music.Song.orig_Update orig, Music.Song self)
+    {
+        if (!currentlySteppingStatus) orig(self);
+    }
+
+    private void PauseMusic(RainWorld self) {
+        Music.MusicPlayer player = self.processManager.musicPlayer;
+        if (player.song == null) return;
+        foreach (var track in player.song.subTracks) {
+            track.source.Pause();
+        }
+    }
+
+
+
+        private void UnpauseMusic(RainWorld self) {
+        Music.MusicPlayer player = self.processManager.musicPlayer;
+        if (player.song == null) return;
+        foreach (var track in player.song.subTracks) {
+            track.source.UnPause();
+        }
+    }
+
 
 
     private void OnModsInitDetour(On.RainWorld.orig_OnModsInit orig, RainWorld self)
@@ -88,6 +116,7 @@ public partial class StepByStep : BaseUnityPlugin
                 localPauseStatus = true;
                 lls.LogInfo("pausing game !");
                 diffKeypresses = false;
+                PauseMusic(self);
             }
             else if (localPauseStatus && Input.GetKeyUp(keys[0]))
             {
@@ -96,6 +125,8 @@ public partial class StepByStep : BaseUnityPlugin
                     localPauseStatus = false; 
                     diffKeypresses = false;
                     lls.LogInfo("resume game !");
+                UnpauseMusic(self);
+
                 }
                 else diffKeypresses = true;
             }

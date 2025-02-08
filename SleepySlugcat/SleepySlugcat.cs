@@ -1,12 +1,14 @@
 ﻿using BepInEx;
 using static SleepySlugcat.Utils;
-using static SleepySlugcat.PluginInfo;
 using UnityEngine;
 using System.Collections.Generic;
 using System;
 using System.Linq;
 using System.Drawing.Text;
-
+using System.Drawing.Imaging;
+using static SleepySlugcat.PluginInfo;
+using RainMeadow;
+using System.Reflection;
 
 namespace SleepySlugcat;
 
@@ -17,12 +19,16 @@ public partial class SleepySlugcatto : BaseUnityPlugin
 {
 
 
+
+
+
+
     List<bool> sleeping = new();//false
     List<bool> wakeUp = new();//false
 
     int debugCounter = 0;//0
     List<bool> forbidGrasps = new();//False
-    List<FLabel> threatLabel = new();
+    List<FLabel> threatLabel = new(); //
     List<ThreatDetermination> currentThreat = new();
     public string colorMode = "random";
     private bool singleZs = false;
@@ -37,7 +43,11 @@ public partial class SleepySlugcatto : BaseUnityPlugin
 
 
 
-    BepInEx.Logging.ManualLogSource LocalLogSource;
+
+
+
+
+    public static BepInEx.Logging.ManualLogSource LocalLogSource;
 
     /// <summary>
     /// Registers hooks
@@ -51,7 +61,6 @@ public partial class SleepySlugcatto : BaseUnityPlugin
 
         try
         {
-
             On.Player.Update += CheckForSleepySlugcat; //handles main logic
             On.Player.CanIPickThisUp += CanWeReallyGrabThatRn; // prevent grabbing when sleeping
             On.Player.Collide += WtfWeGotHit; //stop sleeping if something collides with us
@@ -61,34 +70,139 @@ public partial class SleepySlugcatto : BaseUnityPlugin
             On.RainWorldGame.ctor += ResetDebuggingView; // reset variables and other things when re-entering the game
 
             On.RainWorld.OnModsInit += RainWorldOnOnModsInitDetour; // mod options interface
+
+            On.Menu.PauseMenu.Singal += ResetLabels;
+
+            On.Player.ctor += createMeadowCompatData;
         }
         catch (Exception e)
         {
             Logger.LogError(e);
             Logger.LogError("this mod has been disabled.");
-            On.Player.Update -= CheckForSleepySlugcat; //handles main logic
-            On.Player.CanIPickThisUp -= CanWeReallyGrabThatRn; // prevent grabbing when sleeping
-            On.Player.Collide -= WtfWeGotHit; //stop sleeping if something collides with us
-            On.Player.Die -= WhyDidIDie; // stop sleeping right befroe we die obviously
-            On.Player.JollyEmoteUpdate -= NoYouDont; // If jolly is enabled, its emote thing will overlap with our sleep thing and uncurl
-
-            On.RainWorldGame.ctor -= ResetDebuggingView; // reset variables and other things when re-entering the game
-
-            On.RainWorld.OnModsInit -= RainWorldOnOnModsInitDetour;
+            this.OnDisable();
         }
     }
 
-    private void OnDisable() {
-            clearLocalVariables();
-            On.Player.Update -= CheckForSleepySlugcat; //handles main logic
-            On.Player.CanIPickThisUp -= CanWeReallyGrabThatRn; // prevent grabbing when sleeping
-            On.Player.Collide -= WtfWeGotHit; //stop sleeping if something collides with us
-            On.Player.Die -= WhyDidIDie; // stop sleeping right befroe we die obviously
-            On.Player.JollyEmoteUpdate -= NoYouDont; // If jolly is enabled, its emote thing will overlap with our sleep thing and uncurl
+    private void createMeadowCompatData(On.Player.orig_ctor orig, Player self, AbstractCreature abstractCreature, World world)
+    {
+        orig(self, abstractCreature, world);
+        if (ModManager.ActiveMods.Any((el) => el.id == "henpemaz_rainmeadow"))
+        {
+            LocalLogSource.LogInfo("Created a Player object with Meadow Compat enabled");
+            Type extensionType = Type.GetType("RainMeadow.Extensions, Rain Meadow");
 
-            On.RainWorldGame.ctor -= ResetDebuggingView; // reset variables and other things when re-entering the game
+            if (extensionType == null)
+            {
+                LocalLogSource.LogInfo("Could not find RainMeadow.Extensions type. Skipping.");
+                return;
+            }
+                LocalLogSource.LogInfo("Found RainMeadow.Extensions type");
 
-            On.RainWorld.OnModsInit -= RainWorldOnOnModsInitDetour;
+            MethodInfo getOnlineObjectMethod = extensionType.GetMethods(BindingFlags.Public | BindingFlags.Static).FirstOrDefault((mi) => mi.Name == "GetOnlineObject" && mi.GetParameters().Length == 1);
+
+            var playerOpo = getOnlineObjectMethod.Invoke(null, [self.abstractPhysicalObject]); // self.abstractPhysicalObject.GetOnlineObject();
+
+            if (playerOpo is null)
+            {
+                LocalLogSource.LogWarning("No playerOpo");
+                return;
+            }
+
+            LocalLogSource.LogWarning("playerOpo found");
+
+            var compatType = Type.GetType("SleepySlugcat.SleepyMeadowCompat, SleepySlugcat");
+            if (compatType == null)
+            {
+                LocalLogSource.LogWarning("could not find SleepySlugcat.SleepyMeadowCompat");
+                // Log or silently exit if your own type cannot be resolved.
+                return;
+            }
+                LocalLogSource.LogWarning("Found SleepySlugcat.SleepyMeadowCompat");
+
+            // bool OnlineEntity.TryGetData<T>(out T d)
+            // public bool TryGetData(Type T, out EntityData d);
+
+            MethodInfo tryGetData = playerOpo.GetType().GetMethods(BindingFlags.Public | BindingFlags.Instance).FirstOrDefault(mi =>
+                {
+                    ParameterInfo[] ps = mi.GetParameters();
+                    // Expecting 1 parameter (the out parameter)
+                    return mi.Name == "TryGetData" && ps.Length == 2 && (ps[1].IsOut || ps[1].ParameterType.IsByRef);
+                });
+            object[] args = new object[] { compatType, null }; // will contain the out parameter
+            object resultObj = tryGetData.Invoke(playerOpo, args);
+            bool hadData = resultObj is bool b && b;
+            //  var a = self.abstractPhysicalObject.GetOnlineObject();
+            //  a.GetData
+
+
+            if (hadData)
+            {
+                LocalLogSource.LogWarning("playerOpo already had data");
+
+                return;
+            }
+            LocalLogSource.LogWarning("adding Sleeper data to playerOpo");
+
+
+            // T OnlineEntity.AddData<T>(T toAdd)
+            // var compatInstance = Activator.CreateInstance(compatType);
+            // MethodInfo addData = playerOpo.GetType().GetMethods(BindingFlags.Public | BindingFlags.Instance).FirstOrDefault(mi =>
+            //     {
+            //         ParameterInfo[] ps = mi.GetParameters();
+            //         // Expecting 1 parameter (the out parameter)
+            //         return mi.Name == "AddData" && ps.Length == 1;
+            //     });
+            // object[] args2 = new object[] { compatInstance }; // will contain the out parameter
+            // addData.Invoke(playerOpo, args2);
+
+
+            MethodInfo addDataMethodDef = playerOpo.GetType().GetMethods(BindingFlags.Public | BindingFlags.Instance)
+                .FirstOrDefault(mi =>
+                mi.Name == "AddData" &&
+                mi.IsGenericMethodDefinition &&
+                mi.GetGenericArguments().Length == 1 &&
+                mi.GetParameters().Length == 1);
+
+            if (addDataMethodDef == null)
+            {
+                LocalLogSource.LogWarning("Could not locate generic AddData method.");
+                return;
+            }
+
+            // Get the non-generic method by specifying SleepyMeadowCompat as the type argument.
+            MethodInfo addDataMethod = addDataMethodDef.MakeGenericMethod(compatType);
+
+            // Create an instance of your SleepyMeadowCompat.
+            object compatInstance = Activator.CreateInstance(compatType);
+            // Now call the method with the instance as the parameter.
+            addDataMethod.Invoke(playerOpo, new object[] { compatInstance });
+        }
+    }
+
+    private void ResetLabels(On.Menu.PauseMenu.orig_Singal orig, Menu.PauseMenu self, Menu.MenuObject sender, string message)
+    {
+        if (message is "RESTART" or "YES_EXIT" or "EXIT" or "EDIT")
+        {
+            foreach (var label in CWT.fLabels)
+            {
+                Futile.stage.RemoveChild(label);
+            }
+        }
+        orig(self, sender, message);
+    }
+
+    private void OnDisable()
+    {
+        On.Player.Update -= CheckForSleepySlugcat; //handles main logic
+        On.Player.CanIPickThisUp -= CanWeReallyGrabThatRn; // prevent grabbing when sleeping
+        On.Player.Collide -= WtfWeGotHit; //stop sleeping if something collides with us
+        On.Player.Die -= WhyDidIDie; // stop sleeping right befroe we die obviously
+        On.Player.JollyEmoteUpdate -= NoYouDont; // If jolly is enabled, its emote thing will overlap with our sleep thing and uncurl
+
+        On.RainWorldGame.ctor -= ResetDebuggingView; // reset variables and other things when re-entering the game
+
+        On.RainWorld.OnModsInit -= RainWorldOnOnModsInitDetour;
+
 
     }
 
@@ -101,41 +215,21 @@ public partial class SleepySlugcatto : BaseUnityPlugin
     /// <param name="eu"></param>
     private void CheckForSleepySlugcat(On.Player.orig_Update orig, Player self, bool eu)
     {
-        if (!anyoneInVoidSea && self.inVoidSea) anyoneInVoidSea=true;
-        if (self.isNPC || anyoneInVoidSea) {
-            orig(self, eu); 
-            return;
-        }
-
-        if (self.abstractCreature.world.game.Players.Count != sleeping.Count)
+        debugCounter++;
+        debugCounter %= 40;
+        CWT.SlugSleepData slugSleepData = self.abstractCreature.GetCWTData();
+        if (!anyoneInVoidSea && self.inVoidSea) anyoneInVoidSea = true;
+        if (self.isNPC || anyoneInVoidSea)
         {
-            LocalLogSource.LogInfo("filling in all lists to match players count ! (mod)" + self.abstractCreature.world.game.Players.Count);
-
-            //clearLocalVariables();
-
-            for (int i = 0; i < self.abstractCreature.world.game.Players.Count; i++)
-            {
-                
-                LocalLogSource.LogInfo("adding player no "+i + "" + (self.room.game.Players[i].realizedCreature as Player).slugcatStats.name);
-                LocalLogSource.LogInfo("i:"+i+" index according to game:"+self.abstractCreature.world.game.Players.IndexOf(self.abstractCreature)+" playerNumber:"+self.playerState.playerNumber );
-                sleeping.Add(false);
-                wakeUp.Add(false);
-                forbidGrasps.Add(false);
-                currentThreat.Add(new ThreatDetermination(i));
-                currentThreat[i].Update(self.abstractCreature.world.game);
-                threatLabel.Add(null);
-                updatesSinceLastZPopped.Add(0);
-                LocalLogSource.LogInfo("ok for p no "+i);
-
-            }
+            orig(self, eu);
+            return;
         }
 
         //LocalLogSource.LogInfo($"We're at step 1. currentPlayerIndex will be={self.abstractCreature.world.game.Players.IndexOf(self.abstractCreature)} sleeping.Count:{sleeping.Count} updatesSinceLastZPopped.Count:{updatesSinceLastZPopped.Count}");
 
         // showZs(self);
-        int currentPlayerIndex = self.abstractCreature.world.game.Players.IndexOf(self.abstractCreature);
-       
-        if (abnormalStateFreshness > 40 * (1 + sleeping.Count))
+
+        if (abnormalStateFreshness > 80)
         {
             LocalLogSource.LogWarning("trying to exit abnormal state !");
             abnormalStateFreshness = 0;
@@ -143,87 +237,108 @@ public partial class SleepySlugcatto : BaseUnityPlugin
         }
         if (abnormalState)
         {
-            abnormalStateFreshness++; 
-            orig(self, eu); 
+            abnormalStateFreshness++;
+            orig(self, eu);
             return;
         }
 
         try
         {
 
-            if (sleeping[currentPlayerIndex])
+            if (slugSleepData.sleeping)
             {
-            if (!singleZs) {
-                if (showZs(self)) {
-                    updatesSinceLastZPopped[currentPlayerIndex] = 0;
-                } else {
-                    updatesSinceLastZPopped[currentPlayerIndex]++;
+                if (!singleZs)
+                {
+                    if (showZs(self))
+                    {
+                        slugSleepData.timeSinceLastZPopped = 0;
+                    }
+                    else
+                    {
+                        slugSleepData.timeSinceLastZPopped++;
+                    }
                 }
             }
-        }
-        //LocalLogSource.LogDebug("We're at step 2");
+            //LocalLogSource.LogDebug("We're at step 2");
 
-        if (sleeping[currentPlayerIndex] &&
-        (wakeUp[currentPlayerIndex] || self.input[currentPlayerIndex].y > 0 || self.input[currentPlayerIndex].x != 0 || self.input[currentPlayerIndex].jmp
-        || currentThreat[currentPlayerIndex].currentThreat > 0.30f
-        || (self.bodyMode.value != "Crawl" && self.forceSleepCounter >=260) || self.grabbedBy.Count != 0
-        || self.dead || self.Submersion > 0.6f))
-        {
-             LocalLogSource.LogInfo("waking up rn");
-             LocalLogSource.LogDebug($@"wakeUp[currentPlayerIndex]:{wakeUp[currentPlayerIndex]} self.input[currentPlayerIndex].y > 0:{self.input[currentPlayerIndex].y > 0 } self.input[currentPlayerIndex].x != 0:{self.input[currentPlayerIndex].x != 0} self.input[currentPlayerIndex].jmp:{self.input[currentPlayerIndex].jmp}
-             currentThreat[currentPlayerIndex].currentThreat > 0.30f:{currentThreat[currentPlayerIndex].currentThreat > 0.30f}
-             self.bodyMode.value != Crawl:{self.bodyMode.value != "Crawl"}
-             self.dead:{self.dead} self.Submersion > 0.6f:{self.Submersion > 0.6f}             ");
-            wakeUp[currentPlayerIndex] = false;
-            self.forceSleepCounter = 0;
-            sleeping[currentPlayerIndex] = false;
-            forbidGrasps[currentPlayerIndex] = false;
-        }
-        debugCounter++;
-        debugCounter %= 40;
-       // LocalLogSource.LogDebug("We're at step 3");
+            // there needs to be a difference in getting input from Local and Remote. Locals will have an entry inside self.input
+            int currentPlayerIndex = self.abstractCreature.world.game.Players.IndexOf(self.abstractCreature);
+            bool remoteBeing = currentPlayerIndex == -1;
+            // if (remoteBeing)
+            // {
+            //     // LocalLogSource.LogInfo("Found a foreign being. \n" );
+            //     orig(self, eu);
+            //     return;
+            // }
 
-
-        if (debugCounter % 10 == 0 || debugCounter % 10 == 1)
-        {
-            if (!self.dead) currentThreat[currentPlayerIndex].Update(self.abstractCreature.world.game);
-
-            // showOrUpdateTheThreats(self); // debug thingie !
-        }
-
-       // LocalLogSource.LogDebug("We're at step 4");
-
-
-
-        if ((!sleeping[currentPlayerIndex]) && self.Consious
-        && !self.inShortcut // while in shortcuts, no ground, so IsTileSolid nullrefs
-        && self.input[currentPlayerIndex].y < 0 && !self.input[currentPlayerIndex].jmp && !self.input[currentPlayerIndex].thrw && !self.input[currentPlayerIndex].pckp && Math.Abs(self.input[currentPlayerIndex].x) < 0.2f // Check for self.inputs: only down
-        && self.IsTileSolid(1, 0, -1) //&& ((!self.IsTileSolid(1, -1, -1) || !self.IsTileSolid(1, 1, -1)) && self.IsTileSolid(1, self.input[0].x, 0)) // check if we have ground to sleep on
-        && currentThreat[currentPlayerIndex].currentThreat < 0.15f // check if we feel threatened
-        && !self.room.abstractRoom.shelter // do not nap while in shelter
-        )
-        {
-            self.forceSleepCounter += 2;
-            if (self.forceSleepCounter > 215)
+            if (slugSleepData.sleeping
+            && (slugSleepData.forceWakeUp
+                || (!remoteBeing && (self.input[currentPlayerIndex].y > 0 || self.input[currentPlayerIndex].x != 0 || self.input[currentPlayerIndex].jmp))
+                || slugSleepData.threatDetermination?.currentThreat > 0.34f
+                || (self.bodyMode.value != "Crawl" && self.forceSleepCounter >= 260)
+                || self.grabbedBy.Count != 0
+                || self.dead
+                || self.Submersion > 0.6f))
             {
-                self.LoseAllGrasps();
-            sleeping[currentPlayerIndex] = true;
-forbidGrasps[currentPlayerIndex] = true;
-
+                LocalLogSource.LogInfo("waking up rn");
+            //     LocalLogSource.LogDebug($@"slugSleepData.forceWakeUp:{slugSleepData.forceWakeUp} self.input[currentPlayerIndex].y > 0:{self.input[currentPlayerIndex].y > 0} self.input[currentPlayerIndex].x != 0:{self.input[currentPlayerIndex].x != 0} self.input[currentPlayerIndex].jmp:{self.input[currentPlayerIndex].jmp}
+            //  currentThreat[currentPlayerIndex].currentThreat > 0.30f:{slugSleepData.threatDetermination?.currentThreat > 0.30f}
+            //  self.bodyMode.value != Crawl:{self.bodyMode.value != "Crawl"}
+            //  self.dead:{self.dead} self.Submersion > 0.6f:{self.Submersion > 0.6f}             ");
+                slugSleepData.forceWakeUp = false;
+                self.forceSleepCounter = 0;
+                slugSleepData.sleeping = false;
+                slugSleepData.graspsForbidden = false;
             }
-        } else if (sleeping[currentPlayerIndex] && self.forceSleepCounter < 260) {
-            self.forceSleepCounter += 1;
+
+
+            if (debugCounter % 3 == 0)
+            {
+                if (!self.dead && slugSleepData.threatDetermination != null) slugSleepData.threatDetermination.Update(self.abstractCreature.world.game);
+                slugSleepData.updateDebugString(self.abstractCreature);
+            }
+
+
+
+
+            if (!slugSleepData.sleeping && self.Consious
+            && !self.inShortcut // while in shortcuts, no ground, so IsTileSolid nullrefs
+            && ((remoteBeing && self.forceSleepCounter > 215) ||
+                    (!remoteBeing
+                     && self.input[currentPlayerIndex].y < 0
+                     && !self.input[currentPlayerIndex].jmp
+                     && !self.input[currentPlayerIndex].thrw
+                     && !self.input[currentPlayerIndex].pckp
+                     && Math.Abs(self.input[currentPlayerIndex].x) < 0.2f))// Check for self.inputs: only down, OR remote being that is already sleeping
+            && self.IsTileSolid(1, 0, -1) //&& ((!self.IsTileSolid(1, -1, -1) || !self.IsTileSolid(1, 1, -1)) && self.IsTileSolid(1, self.input[0].x, 0)) // check if we have ground to sleep on
+            && (remoteBeing || slugSleepData.threatDetermination?.currentThreat < 0.21f) // check if we feel threatened
+            && !self.room.abstractRoom.shelter // do not nap while in shelter
+            )
+            {
+                self.forceSleepCounter += 2;
+                if (self.forceSleepCounter > 215)
+                {
+                    self.LoseAllGrasps();
+                    slugSleepData.sleeping = true;
+                    slugSleepData.graspsForbidden = true;
+
+                }
+            }
+            else if (slugSleepData.sleeping && self.forceSleepCounter < 260)
+            {
+                self.forceSleepCounter += 1;
+            }
+
+
+            else if (!slugSleepData.sleeping && self.forceSleepCounter > 0 && !self.room.abstractRoom.shelter)
+            {
+                self.forceSleepCounter--; // gradually decrease sleepiness if threshsold not reached
+            }
+
+
         }
-
-
-        else if (!sleeping[currentPlayerIndex] && self.forceSleepCounter > 0 && !self.room.abstractRoom.shelter)
+        catch (Exception e)
         {
-            self.forceSleepCounter--; // gradually decrease sleepiness if threshsold not reached
-        }
-
-
-        //LocalLogSource.LogDebug("We're at step 6");
-        } catch (Exception e) {
             abnormalState = true;
             Logger.LogError(e);
         }
@@ -232,25 +347,7 @@ forbidGrasps[currentPlayerIndex] = true;
 
     }
 
-    private void clearLocalVariables()
-    {
-        LocalLogSource.LogInfo("clearing variables");
-        anyoneInVoidSea=false;
-            sleeping.Clear();
-            wakeUp.Clear();
-            forbidGrasps.Clear();
-            currentThreat.Clear();
-            forbidGrasps.Clear();
-            updatesSinceLastZPopped.Clear();
-            foreach (var thing in threatLabel)
-            {
-                // LocalLogSource.LogInfo("removing debug view from");
 
-                if (thing != null) Futile.stage.RemoveChild(thing);
-
-            }
-            threatLabel.Clear();
-    }
 
     /// <summary>
     /// Prevent grabbing stuff if we are sleeping
@@ -261,8 +358,9 @@ forbidGrasps[currentPlayerIndex] = true;
     /// <returns></returns>
     private bool CanWeReallyGrabThatRn(On.Player.orig_CanIPickThisUp orig, Player self, PhysicalObject obj)
     {
+        CWT.SlugSleepData slugSleepData = self.abstractCreature.GetCWTData();
 
-        if (  !(self.isNPC || anyoneInVoidSea) && self.abstractCreature.world.game.Players.IndexOf(self.abstractCreature) != -1 && forbidGrasps[self.abstractCreature.world.game.Players.IndexOf(self.abstractCreature)]) return false;
+        if (!(self.isNPC || anyoneInVoidSea) && slugSleepData.graspsForbidden) return false;
         return orig(self, obj);
     }
 
@@ -277,11 +375,13 @@ forbidGrasps[currentPlayerIndex] = true;
     /// <param name="otherChunk"></param>
     private void WtfWeGotHit(On.Player.orig_Collide orig, Player self, PhysicalObject otherObject, int myChunk, int otherChunk)
     {
-        if (!(self.isNPC || anyoneInVoidSea) &&  self.abstractCreature.world.game.Players.IndexOf(self.abstractCreature) != -1 && sleeping[self.abstractCreature.world.game.Players.IndexOf(self.abstractCreature)] && self.forceSleepCounter >= 260)
+        CWT.SlugSleepData slugSleepData = self.abstractCreature.GetCWTData();
+
+        if (!(self.isNPC || anyoneInVoidSea) && slugSleepData.sleeping && self.forceSleepCounter >= 260) // why the additional fsc check ?
         {
-            wakeUp[self.abstractCreature.world.game.Players.IndexOf(self.abstractCreature)] = true;
+            slugSleepData.forceWakeUp = true;
             self.forceSleepCounter = 0;
-             LocalLogSource.LogInfo("collided: "+(self).slugcatStats.name + " and "+otherObject.GetType());
+            LocalLogSource.LogInfo("collided: " + (self).slugcatStats.name + " and " + otherObject.GetType());
         }
         orig(self, otherObject, myChunk, otherChunk);
     }
@@ -293,9 +393,11 @@ forbidGrasps[currentPlayerIndex] = true;
     /// <param name="self"></param>
     private void WhyDidIDie(On.Player.orig_Die orig, Player self)
     {
-        if (!(self.isNPC || anyoneInVoidSea) && self.abstractCreature.world.game.Players.IndexOf(self.abstractCreature) != -1 && (sleeping[self.abstractCreature.world.game.Players.IndexOf(self.abstractCreature)] || self.sleepCurlUp > 0.5f))
+        CWT.SlugSleepData slugSleepData = self.abstractCreature.GetCWTData();
+
+        if (!(self.isNPC || anyoneInVoidSea) && (slugSleepData.sleeping || self.sleepCurlUp > 0.5f))
         {
-            wakeUp[self.abstractCreature.world.game.Players.IndexOf(self.abstractCreature)] = true;
+            slugSleepData.forceWakeUp = true;
             self.forceSleepCounter = 0;
             self.sleepCurlUp = 0f;
             // LocalLogSource.LogInfo("died");
@@ -329,9 +431,8 @@ forbidGrasps[currentPlayerIndex] = true;
         if (Zs.musician) Zs.text = "s";
         Zs.baseSizeVar = modOptions.ZsSizeVarianceConfigurable.Value;
 
-         clearLocalVariables();
-            
-        
+
+
     }
 
     /// <summary>
@@ -341,9 +442,11 @@ forbidGrasps[currentPlayerIndex] = true;
     /// <returns>true if Z was summonned</returns>
     private bool showZs(Player self)
     {
-        if (updatesSinceLastZPopped[self.abstractCreature.world.game.Players.IndexOf(self.abstractCreature)] > 160 || UnityEngine.Random.value < (0.005 + modOptions.ZsQtyVarianceConfigurable.Value*0.015) && updatesSinceLastZPopped[self.abstractCreature.world.game.Players.IndexOf(self.abstractCreature)] > 25 - modOptions.ZsQtyVarianceConfigurable.Value * 10)
+        CWT.SlugSleepData slugSleepData = self.abstractCreature.GetCWTData();
+
+        if (slugSleepData.timeSinceLastZPopped > 160 || UnityEngine.Random.value < (0.005 + modOptions.ZsQtyVarianceConfigurable.Value * 0.015))// idk what this is && updatesSinceLastZPopped[self.abstractCreature.world.game.Players.IndexOf(self.abstractCreature)] > 25 - modOptions.ZsQtyVarianceConfigurable.Value * 10)
         {
-          
+
             // LocalLogSource.LogInfo("Spawning a bubble P" + self.abstractCreature.world.game.Players.IndexOf(self.abstractCreature) + " " + " " + self.forceSleepCounter + " " + self.sleepCurlUp + " " + self.sleepCounter + " mode: "+modOptions.ZsColorTypeConfigurable.Value + " rainbow:"+modOptions.ZsColorRainbowTypeConfigurable.Value);
             self.room.AddObject(
                 new Zs(

@@ -2,27 +2,23 @@
     <PropertyGroup>
         <PluginID>"nope.sleepyslugcat"</PluginID>
         <Product>"Sleepy Slugcat"</Product>
-        <Version>3.9</Version>
+        <Version>4.0.1</Version>
         <ModDesc>"Let the lil dude sleep ! With a supplement of Zzs&lt;LINE&gt;When you are in a calm place, take the time to sleep by holding down and relax.&lt;LINE&gt;Comes with a bunch of options for your Zs color, size and the contents of the Zzs.&lt;LINE&gt;&lt;LINE&gt;Make sure your slugcat feels safe and that they will not fall into a hole while sleeping !"</ModDesc>
         <TargetFramework>net48</TargetFramework>
-        <LangVersion>11</LangVersion>
+        <LangVersion>12</LangVersion>
         <OutDir>./$(AssemblyName)/plugins/</OutDir>
-        <DebugType>None</DebugType>
-        <DebugSymbols>False</DebugSymbols>
+        <DebugType>portable</DebugType>
+        <DebugSymbols>True</DebugSymbols>
         <RWDir>$(HOME)/.local/share/Steam/steamapps/common/Rain World/</RWDir>
         <NoWarn>0436</NoWarn>
     </PropertyGroup>
+    
     <ItemGroup>
-        <PackageReference Include="BepInEx.Analyzers"
-                          Version="1.*"
-                          PrivateAssets="all" />
-        <PackageReference Include="BepInEx.Core"
-                          Version="5.*" />
-        <PackageReference Include="BepInEx.PluginInfoProps"
-                          Version="2.*" />
-    </ItemGroup>
-    <ItemGroup>
-   
+           <Reference Include="./lib/*.dll">
+            
+            <Private>false</Private>
+            <ExcludeAssets>all</ExcludeAssets>
+        </Reference>
         <Reference Include="BepInEx">
             <HintPath>$(RWDir)/BepInEx/core/BepInEx.dll</HintPath>
             <Private>false</Private>

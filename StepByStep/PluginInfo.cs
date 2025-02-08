@@ -4,6 +4,6 @@ namespace StepByStep
     {
         public const string PLUGIN_GUID = "nope.stepbystep";
         public const string PLUGIN_NAME = "Step By Step";
-        public const string PLUGIN_VERSION = "1.3";
+        public const string PLUGIN_VERSION = "1.4";
     }
 }

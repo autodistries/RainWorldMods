@@ -3,7 +3,7 @@ using UnityEngine;
 using static SleepySlugcat.Utils;
 
 namespace SleepySlugcat;
-public class ModOptions : OptionInterface
+public   class ModOptions : OptionInterface
 {
     SleepySlugcatto modInstance;
     bool init = false;
@@ -75,6 +75,15 @@ public class ModOptions : OptionInterface
         ZsColorTypeConfigurable.OnChange += () =>
             {
                 Debug.Log("Changed ZsColorConfigurable value to " + ZsColorTypeConfigurable.Value);
+                // Zs. = ZsColorTypeConfigurable.Value switch 
+                // {
+                //     "random" => ColorMode.RANDOM,
+                //     "slugcat" => ColorMode.SLUGCAT,
+                //     "custom" => ColorMode.CUSTOM,
+
+                    
+                //     default:
+                // };
                 ss.colorMode = ZsColorTypeConfigurable.Value;
             };
 

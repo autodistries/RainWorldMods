@@ -92,7 +92,7 @@ public partial class ModsUpdater
             if (VersionLabel is null) return false;
             UpdateColor();
             VersionLabel.color = color;
-            if ((status == ModStatusTypes.Updatable || status == ModStatusTypes.Has_A_Preloader_Cant_Update) && serverMod is not null)
+            if ((status is ModStatusTypes.Updatable or ModStatusTypes.Has_A_Preloader_Cant_Update) && serverMod is not null)
             {
                 VersionLabel.text = Mod.version + "->" + serverMod.Version;
                 return true;

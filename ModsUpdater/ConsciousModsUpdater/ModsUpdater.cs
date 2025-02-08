@@ -52,7 +52,7 @@ public partial class ModsUpdater : BaseUnityPlugin
 
     static bool currentlyLoadingRainDB = false;
     private static bool doneReading = false;
-    private Dictionary<string, (DateTime, ServerMod)>? UpdateCheckLog; // cached foreign updates info
+    private Dictionary<string, (DateTime, ServerMod)> UpdateCheckLog = new(); // cached foreign updates info
     private string? currentlyPreviewedModId;
     // readonly ModOptions modOptions;
     
@@ -66,7 +66,7 @@ public partial class ModsUpdater : BaseUnityPlugin
         if (done) return;
         Logger.LogInfo("Hooking setup methods...");
         On.RainWorld.OnModsInit += RainWorldOnOnModsInitDetour;
-        On.ModManager.WrapModInitHooks += LoadLocalMods; // discovers existing local mods (by native Mods manager)
+        On.ModManager.WrapModInitHooks += LoadLocalMods; // discovers existing local mods (using native Mods manager)
 
         On.Menu.MainMenu.ctor += ActuallyhookVersionLabelChange; // hooks further hooks & loads servermods. prevents cctors not being inited and stuff
 
@@ -84,12 +84,7 @@ public partial class ModsUpdater : BaseUnityPlugin
         On.Menu.Remix.InternalOI_Stats._RefreshStats += StatsMenuLabelsUpdates; // upates that info
         On.Menu.Remix.MenuModList.ListButton.ctor += InfoButtonGetter; // lets us make the update button selectable via keyboard
         On.Menu.Remix.InternalOI_Stats._PreviewMod += ModPreviewHooker;
-        try {
             On.Menu.ModdingMenu._SwitchToMainMenu += DestroyGraphics; 
-        } catch {
-            On.Menu.ModdingMenu._SwitchToMainMenu -= DestroyGraphics;
-            Logger.LogMessage("the logger ran...");
-        }
 
         initForeignUpdateCheckLog(); // gather cached data from local file for remote sources
         await Task.Run(ParseAndQueryWorkshopModlist); // get workshop ServerMods
@@ -222,7 +217,7 @@ public partial class ModsUpdater : BaseUnityPlugin
             lblVersion.text += " -> " + currentObject.ServerMod!.Version;
 
         Graphics.LblPreviewUpdateStatus!.text = "Status: " + currentObject.Status.ToString().Replace("_"," ");
-        if (currentObject.Status == ModStatusTypes.Updatable || currentObject.Status == ModStatusTypes.Latest)
+        if (currentObject.Status is ModStatusTypes.Updatable or ModStatusTypes.Latest)
         {
             Graphics.LblPreviewUpdateStatus!.text += " (Souce: " + currentObject.ServerMod!.Source + ")";
         }
@@ -327,7 +322,7 @@ public partial class ModsUpdater : BaseUnityPlugin
                     }
                 }
                 trigger.description = $"success:{successCounter}, failures: {failureCounter}";
-                LocalInternalOiStats._RefreshStats();
+                LocalInternalOiStats!._RefreshStats();
                 // refreshMethodInfo.Invoke(, new object[] { });
 
                 if (successCounter != 0) ModUpdaterStatus = "Please restart your game to apply updates";
@@ -347,9 +342,9 @@ public partial class ModsUpdater : BaseUnityPlugin
                 targetBtn.greyedOut = true;
                 targetBtn.description = "Updating...";
                 
-                if (ModObjects.ContainsKey(currentlyPreviewedModId))
+                if (ModObjects.ContainsKey(currentlyPreviewedModId ?? "notakey"))
                 {
-                    ModHolder mod = ModObjects[currentlyPreviewedModId];
+                    ModHolder mod = ModObjects[currentlyPreviewedModId!];
                     targetBtn.description+=$"({ (await Utils.FileManager.GetRemoteFileSize(mod.ServerMod!.Link)) / 1024 }KB)";
                     Utils.StatusCode res = await mod.triggerUpdate();
                     if (res == Utils.StatusCode.Success)
@@ -558,7 +553,7 @@ public partial class ModsUpdater : BaseUnityPlugin
         Utils.StatusCode result = await Utils.FileManager.IsRemoteFileNewer(url);
         Logger.LogDebug(result);
 
-        if (result == StatusCode.LocalFileNotFound || result == StatusCode.UpdateAvailable) {
+        if (result is StatusCode.LocalFileNotFound or StatusCode.UpdateAvailable) {
             await FileManager.DownloadFileAsync(url, targetPath);
         } else if (result == StatusCode.LocalFileUpToDate ) {
             Logger.LogDebug("Not updating raindb.js up to date : " + Utils.GetErrorMessage(result));
@@ -646,7 +641,7 @@ public partial class ModsUpdater : BaseUnityPlugin
     /// <returns></returns>
     private bool WasLastUpdateLongAgo(string modid)
     {
-        if (UpdateCheckLog == null)
+        if (UpdateCheckLog.Count == 0)
         {
             initForeignUpdateCheckLog();
         }

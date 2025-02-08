@@ -1,6 +1,9 @@
-*/.vscode/
-obj/
-libs/
-out/
-bin/
+**/.vscode/
+**/obj/
+**/lib*/
+**/out/
+**/bin/
+**/*.pdb
 HealthBars*
+NoDoubleBackspearItemDrop*
+BetterSteamUploader*
