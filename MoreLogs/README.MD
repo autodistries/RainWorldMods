@@ -1,3 +1,9 @@
+# MoreLogs
+This mod is a combination of utilities useful for debugging purposes.
+
+
+## RainWorld.ShowLogs
+
 This (very simple) Rain World mod makes the game log more things to console.
 You then can view more logs as the game runs !
 For this however, you need some way to view logs.
@@ -15,8 +21,8 @@ You can set it to true (or false) manually (before and after) if you prefer.
 NB: deleting the "ononce" file in the mod's dir will make it activate again
 
 
-## Why ?
-Before Debug.Logging something, the game often checks if it should log things in the first place and only does it if RainWorld.ShowLogs is true.
+### Why ?
+Before Debug.Logging something (and specifically in Jolly), the game often checks if it should log things in the first place and only does it if RainWorld.ShowLogs is true.
 With this mod, logs viewable with DevTools K shortcut are always being logged.
 Running the game under Proton from GNU/Linux in terminal shows logs in terminal by default; this mod makes it so that the game logs more things. I like my game logs verbose :3
 
