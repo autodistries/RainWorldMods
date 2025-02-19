@@ -1,0 +1,11 @@
+{
+    "id": "nope.no.auto.backup",
+    "name": "Auto-backup disabler",
+    "version": "1.0",
+    "authors": "Nope",
+    "description": "If enabled, this mod prevents automatic backups from being created<LINE>Do not enable this mod if you don't know what you're doing !<LINE>You risk losing progress.",
+    "requirements": [],
+    "requirements_names": [],
+    "checksum_override_version": true,
+    "hide_version": false
+  }
