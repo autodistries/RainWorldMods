@@ -11,10 +11,10 @@
         Put whatever you want inside here : -->
         <PluginID>nope.collectibles.on.char.select</PluginID>
         <Product>Show Collectibles on Slugcat Select</Product>
-        <Version>0.1.2</Version>
+        <Version>0.1.4</Version>
         <Author>Nope</Author>
         <Requirements></Requirements>
-        <ModDesc>This mod makes the tokens (or collectibles) appear on character select menu.&lt;LINE&gt;This is threaded and should not impact performance, but it can be switched on and off dynamically from the Remix page.&lt;LINE&gt;This mod requires Rain World Remix to be enabled, and is not compatible with Improved Collectibles Tracker for now :c</ModDesc>
+        <ModDesc>This mod makes the tokens (or collectibles) appear on character select menu.&lt;LINE&gt;This is threaded and should not impact performance, but it can be switched on and off dynamically from the Remix page.&lt;LINE&gt;This mod requires Rain World Remix to be enabled.</ModDesc>
         <TargetFramework>net48</TargetFramework>
         <LangVersion>12</LangVersion>
         <!-- These are variables we'll use inside this file -->
