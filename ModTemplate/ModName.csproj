@@ -15,18 +15,24 @@
         <Author>Nope</Author>
         <Requirements></Requirements>
         <ModDesc>A sample mod. Testing newlines like _newline_ and also &lt;LINE&gt;these kind of line jump</ModDesc>
-        <TargetFramework>net48</TargetFramework>
-        <LangVersion>11</LangVersion>
         <!-- These are variables we'll use inside this file -->
+
+        <TargetFramework>net48</TargetFramework>
+        <LangVersion>12</LangVersion>
+
         <OutDir>./$(AssemblyName)/plugins</OutDir>
         <!-- where the compiled mod will be placed -->
+
         <RWDir>$(HOME)/.local/share/Steam/steamapps/common/Rain World/</RWDir>
         <!-- The path where your Rain World executable is stored -->
+
         <LocalLibsDir>./libs/</LocalLibsDir>
-        <!-- The path where you can put local libs. You won't need that for most projects -->
-        <!-- This is for outputting pdb files -->
-        <DebugSymbols>False</DebugSymbols>
-        <DebugType>None</DebugType>
+        <!-- The path where you can put local libs. You won't need that for most projects, but putting -->
+
+        <!-- This is for outputting pdb files, helpful for rebugging (provides the line of the error if it comes from your mod). 
+        You can turn that off for released mods -->
+        <DebugSymbols>True</DebugSymbols>
+        <DebugType>portable</DebugType>
     </PropertyGroup>
 
 
@@ -97,7 +103,7 @@
         <Exec Command="zip -r ./$(AssemblyName) ./$(AssemblyName)"
               Condition="'$(OS)' == 'Unix'" />
         <!-- try to kill the currently running rain world executable -->
-        <Exec command="kill -2 $(ps -A | grep RainWorld | awk '{print $1}') | echo 0" />
+        <!-- <Exec command="kill -2 $(ps -A | grep RainWorld | awk '{print $1}') | echo 0" /> -->
         <!-- <Exec command="env STEAM_COMPAT_DATA_PATH=/home/guigui/.local/share/Steam/steamapps/compatdata/312520 STEAM_COMPAT_CLIENT_INSTALL_PATH=/home/guigui/.local/share/Steam/steamapps/compatdata WINEDLLOVERRIDES=winhttp=n,b '/home/guigui/.local/share/Steam/steamapps/common/Proton 8.0/proton' waitforexitandrun '/home/guigui/.local/share/Steam/steamapps/common/Rain World/RainWorld.exe' &amp;" /> -->
     </Target>
 
@@ -109,7 +115,7 @@
 
 
     <!-- This action fills the PluginInfo.cs with the info on top of this csproj -->
-    <!-- RootNamespace will be the name of THIS CSPROJ minus the file extention -->
+    <!-- RootNamespace will be the name of THIS CSPROJ minus the file extention, make sure you use that namespace at least in the main file -->
     
     <Target Name="AddGeneratedFile"
             BeforeTargets="BeforeBuild"

@@ -19,10 +19,11 @@ Works on my machine (tm), using a visual studio code fork (vscodium)
 
 
 ## TODO
-* test it myself
+
+???
 
 ## Usage
-* run `dotnet restore` inside the main folder
+* run `dotnet restore` inside the main folder (optional, will be done automatically when `dotnet build`ing)
 * Fill in the mod info inside the first section of the csproj
 * `dotnet build`
 * run the game, enable the mod, and observe a "Hello World !" in the console
