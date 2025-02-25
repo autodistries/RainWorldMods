@@ -1,0 +1,11 @@
+{
+    "id": "nope.pathtracer",
+    "name": "Path Tracer",
+    "version": "0.0.3",
+    "authors": "Nope",
+    "description": "A sample mod. Testing newlines like \n and also <LINE>these kind of line jump",
+    "requirements": [],
+    "requirements_names": [],
+    "checksum_override_version": true,
+    "hide_version": false
+  }
