@@ -1,14 +1,12 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Windows.Forms;
 using BepInEx.Logging;
 using HUD;
 using Menu;
 using RWCustom;
-using Unity.Mathematics;
 using UnityEngine;
-using UnityEngine.Rendering;
-using UnityEngine.XR;
 
 namespace PathTracer;
 
@@ -20,21 +18,21 @@ public class SlugcatPath
     public Dictionary<string, List<PositionEntry>> slugcatPositions = new();
 
 
-     Map map = null;
+    public Map map = null;
 
 
-    public static int maxBackwardsRooms = 5;
+    public static int maxBackwardsRooms => ModOptions.maxRoomsToRememberPerRegion.Value;
 
     public static List<int> lastNRooms;
     public static ManualLogSource Logger;
-
-
+    internal static bool cycleTick = false;
 
     Color TargetColor => PlayerGraphics.SlugcatColor(GetSlugcat() ?? SlugcatStats.Name.Red);
 
-    private SlugcatStats.Name GetSlugcat(Map m = null)
+    internal SlugcatStats.Name GetSlugcat(Map m = null)
     {
         if (m == null) m = map;
+        if (map == null) return null;
 
         if (m.hud.owner is Player p)
         {
@@ -49,11 +47,17 @@ public class SlugcatPath
             return kls.myGamePackage.characterStats.name;
         }
 
-        else return SlugcatStats.Name.Red;
-
-
-
+        else return null;
     }
+
+    internal bool ModeWrite(Map m = null) {
+        if (m == null) m = map;
+        if (map==null) return false; //Read-only
+        if (map.hud.owner is Player) return true; // PLaying, yay ! 
+        else return false;
+    }
+
+    internal bool ReadOnly(Map m = null) => !ModeWrite(m);
 
     public string CurrentRegion => map?.RegionName ?? "unknown";
     
@@ -63,12 +67,12 @@ public class SlugcatPath
         lastNRooms = new();
     }
 
-    public SlugcatPath(Dictionary<string, PositionEntry[]> positions, Map map) {
+    public SlugcatPath(Dictionary<string, IEnumerable<PositionEntry>> positions, Map map) {
         foreach (var regPos in positions) {
             this.slugcatPositions.Add(regPos.Key, regPos.Value.ToList());
         }
         this.map = map;
-        lastNRooms = slugcatPositions[CurrentRegion].Select((el) => el.roomNumber).Distinct().ToList();
+        lastNRooms = slugcatPositions.regionDataOrNew(CurrentRegion).Select((el) => el.roomNumber).Distinct().ToList();
     }
 
 
@@ -79,9 +83,9 @@ public class SlugcatPath
 
 
     public void addNewPosition(PositionEntry p)
-    {
-        if (!slugcatPositions.ContainsKey(CurrentRegion)) slugcatPositions.Add(CurrentRegion, []);
-        slugcatPositions[CurrentRegion].Add(p);
+    { 
+        if (map == null) return;
+        slugcatPositions.regionDataOrNew(CurrentRegion).Add(p);
         if (!lastNRooms.Contains(p.roomNumber) || lastNRooms.Last() != p.roomNumber) {
 
             if (lastNRooms.Remove(p.roomNumber)) {
@@ -91,24 +95,24 @@ public class SlugcatPath
             Logger.LogInfo($"appended {p.roomNumber}");
         }
 
-        if (lastNRooms.Count > maxBackwardsRooms) {
+        while (lastNRooms.Count > maxBackwardsRooms) {
             int roomToRemove = lastNRooms[0];
             Logger.LogInfo("Will be removing entries from room "+roomToRemove);
-            while (slugcatPositions[CurrentRegion].Count > 0 && slugcatPositions[CurrentRegion][0].roomNumber == roomToRemove) {
-                var trp = slugcatPositions[CurrentRegion][0];
+            while (slugcatPositions.regionDataOrNew(CurrentRegion).Count > 0 && slugcatPositions.regionDataOrNew(CurrentRegion)[0].roomNumber == roomToRemove) {
+                var trp = slugcatPositions.regionDataOrNew(CurrentRegion)[0];
                 if (trp.lastSprite!=null) {
                     lines.Remove(trp.lastSprite);
                     trp.lastSprite.RemoveFromContainer();
                     trp.lastSprite = null;
                 }
                 Logger.LogInfo($"Removed point {trp}");
-                slugcatPositions[CurrentRegion].Remove(trp);
+                slugcatPositions.regionDataOrNew(CurrentRegion).Remove(trp);
             }
-            if (slugcatPositions[CurrentRegion].Count > 0 && slugcatPositions[CurrentRegion][0].lastSprite != null) // avoid keeping lines that point to a non existant origin
+            if (slugcatPositions.regionDataOrNew(CurrentRegion).Count > 0 && slugcatPositions.regionDataOrNew(CurrentRegion)[0].lastSprite != null) // avoid keeping lines that point to a non existant origin
             {
-                lines.Remove(slugcatPositions[CurrentRegion][0].lastSprite);
-                slugcatPositions[CurrentRegion][0].lastSprite.RemoveFromContainer();
-                slugcatPositions[CurrentRegion][0].lastSprite = null;
+                lines.Remove(slugcatPositions.regionDataOrNew(CurrentRegion)[0].lastSprite);
+                slugcatPositions.regionDataOrNew(CurrentRegion)[0].lastSprite.RemoveFromContainer();
+                slugcatPositions.regionDataOrNew(CurrentRegion)[0].lastSprite = null;
             }
             lastNRooms.Remove(roomToRemove);
         }
@@ -121,13 +125,15 @@ public class SlugcatPath
     private void appendLastLine()
     {
         if (map == null) return;
-        int resumePos = slugcatPositions[CurrentRegion].Count;
+        if (!ModOptions.doShowData.Value) return;
+
+        int resumePos = slugcatPositions.regionDataOrNew(CurrentRegion).Count;
         if (resumePos < 1) return;
 
-        PositionEntry lastP = slugcatPositions[CurrentRegion][resumePos - 2];
+        PositionEntry lastP = slugcatPositions.regionDataOrNew(CurrentRegion)[resumePos - 2];
         lastP.storedRealPos = null;
 
-        PositionEntry p = slugcatPositions[CurrentRegion][resumePos - 1];
+        PositionEntry p = slugcatPositions.regionDataOrNew(CurrentRegion)[resumePos - 1];
 
         FSprite line = new FSprite("pixel")
         {
@@ -143,34 +149,43 @@ public class SlugcatPath
         line.rotation = Custom.AimFromOneVectorToAnother(lastP.GetPos(map), p.GetPos(map));
 
         lines.Add(line);
-        Logger.LogInfo($"Adding single line from {lastP.GetPos(map)} to {p.GetPos(map)} length {line.scaleY} rot {line.rotation}");
+        // Logger.LogInfo($"Adding single line from {lastP.GetPos(map)} to {p.GetPos(map)} length {line.scaleY} rot {line.rotation}");
         map.container.AddChild(line);
         p.lastSprite = line;
+    }
+
+    public void clearLines()
+    {
+        lines.ForEach((line) => line.RemoveFromContainer());
+        lines.Clear();
+        if (map != null) slugcatPositions.regionDataOrNew(CurrentRegion).ForEach((pos) => pos.lastSprite = null);
+        Logger.LogInfo("Cleared lines from previous region");
+
     }
 
     public void appendNewLines(Map newMap = null)
     {
         if (newMap != null)
         {
-            if (map != null) {
-                lines.ForEach((line) => line.RemoveFromContainer());
-                lines.Clear();
-                slugcatPositions[CurrentRegion].ForEach((pos) => pos.lastSprite = null);
-                Logger.LogInfo("Cleared lines from previous region");
-                
+            if (map != null)
+            {
+
+                clearLines();
+
                 bool slugcatChanged = GetSlugcat(newMap) != GetSlugcat();
                 bool regionChanged = newMap.mapData.regionName != CurrentRegion;
 
-                if (slugcatChanged || regionChanged || newMap != map) {
-                    MetaPathStore.StoreRegion(slugcatPositions[CurrentRegion], map.hud.rainWorld.options.saveSlot, GetSlugcat(), CurrentRegion);
+                if ((slugcatChanged || regionChanged || newMap != map) && !cycleTick)
+                {
+                    MetaPathStore.StoreRegion(slugcatPositions.regionDataOrNew(CurrentRegion), map.hud.rainWorld.options.saveSlot, GetSlugcat(), CurrentRegion);
                     Logger.LogInfo("Stored changes");
-                    MetaPathStore.SyncColdFiles();
+                    MetaPathStore.WriteColdFiles();
                 }
 
                 if (slugcatChanged)
                 {
                     Logger.LogInfo($"Slugcat changed ! from {GetSlugcat()} -> {GetSlugcat(newMap)}");
-                    slugcatPositions.Clear();
+                    clearPositions();
                     var positionsFresh = MetaPathStore.LoadDataFor(newMap.hud.rainWorld.options.saveSlot, GetSlugcat(newMap));
                     foreach (var regPos in positionsFresh)
                     {
@@ -181,9 +196,7 @@ public class SlugcatPath
                 if (regionChanged)
                 {
                     Logger.LogInfo($"region has changed from {CurrentRegion} to {newMap.RegionName}");
-                    if (slugcatPositions.ContainsKey(newMap.RegionName))
-                        lastNRooms = slugcatPositions[newMap.RegionName].Select((el) => el.roomNumber).Distinct().ToList();
-                    else lastNRooms.Clear();
+                    slugcatPositions.regionDataOrNew(newMap.RegionName).Select((el) => el.roomNumber).Distinct().ToList();
                 }
             }
             else
@@ -198,13 +211,9 @@ public class SlugcatPath
             }
             map = newMap;
             Logger.LogInfo($"Stored new map for {GetSlugcat()} in region {CurrentRegion}, ");
-            if (!slugcatPositions.ContainsKey(CurrentRegion))
-            {
-                slugcatPositions.Add(CurrentRegion, []);
-                Logger.LogInfo("Created new key for region " + CurrentRegion);
-            } else {
-                Logger.LogInfo("Region has "+slugcatPositions[CurrentRegion].Count+" records");
-            }
+           
+            Logger.LogInfo("Region has "+slugcatPositions.regionDataOrNew(CurrentRegion).Count+" records");
+        
         }
 
         if (map == null)
@@ -213,21 +222,23 @@ public class SlugcatPath
             return;
         }
 
+        if (!ModOptions.doShowData.Value) return;
 
-        int resumePos = slugcatPositions[CurrentRegion].FindIndex((el) => el.lastSprite == null && slugcatPositions[CurrentRegion].IndexOf(el) != 0);
+
+        int resumePos = slugcatPositions.regionDataOrNew(CurrentRegion).FindIndex((el) => el.lastSprite == null && slugcatPositions.regionDataOrNew(CurrentRegion).IndexOf(el) != 0);
         if (resumePos == -1)
         {
-            Logger.LogInfo("APPENDnEWlINE RESUMEpOS WAS -1");
+            Logger.LogInfo("APPENDnEWlINE RESUMEpOS WAS -1, no new lines to append");
             return;
         }
 
-        PositionEntry lastP = slugcatPositions[CurrentRegion][resumePos - 1];
+        PositionEntry lastP = slugcatPositions.regionDataOrNew(CurrentRegion)[resumePos - 1];
 
         lastP.storedRealPos = null;
 
-        for (int i = resumePos; i < slugcatPositions[CurrentRegion].Count; i++)
+        for (int i = resumePos; i < slugcatPositions.regionDataOrNew(CurrentRegion).Count; i++)
         {
-            PositionEntry p = slugcatPositions[CurrentRegion][i];
+            PositionEntry p = slugcatPositions.regionDataOrNew(CurrentRegion)[i];
 
             FSprite line = new FSprite("pixel")
             {
@@ -242,7 +253,7 @@ public class SlugcatPath
             line.rotation = Custom.AimFromOneVectorToAnother(lastP.GetPos(map), p.GetPos(map));
 
             lines.Add(line);
-            Logger.LogInfo($"Adding line from {lastP.GetPos(map)} to {p.GetPos(map)} length {line.scaleY} rot {line.rotation}");
+            // Logger.LogInfo($"Adding line from {lastP.GetPos(map)} to {p.GetPos(map)} length {line.scaleY} rot {line.rotation}");
             map.container.AddChild(line);
             p.lastSprite = line;
 
@@ -250,22 +261,28 @@ public class SlugcatPath
         }
     }
 
+    public void clearPositions()
+    {
+        slugcatPositions.Clear();
+    }
+
     internal void UpdateLines(float timeStacker)
     {
+
         // if (ModMainClass.debug) Logger.LogInfo("Drawing updating positions");
         if (map == null)
         {
             if (ModMainClass.debug) Logger.LogInfo("WE ARE NOT PREPARED to update lines, no map");
             return;
         }
-        if (lines.Count == 0) return;
-        PositionEntry lastP = slugcatPositions[CurrentRegion].FirstOrDefault();
+        if (lines.Count == 0) return; // ok with doshowdata off
+        PositionEntry lastP = slugcatPositions.regionDataOrNew(CurrentRegion).FirstOrDefault();
         lastP.storedRealPos = null;
-        if (ModMainClass.debug) Logger.LogInfo($"Updating positions of {lines.Count} alpha {map.fade}");
+        // if (ModMainClass.debug) Logger.LogInfo($"Updating positions of {lines.Count} alpha {map.fade}");
 
         for (int i = 0; i < lines.Count; i++)
         {
-            PositionEntry p = slugcatPositions[CurrentRegion][i + 1];
+            PositionEntry p = slugcatPositions.regionDataOrNew(CurrentRegion)[i + 1];
             FSprite line = lines[i];
 
             p.storedRealPos = null;
@@ -279,6 +296,9 @@ public class SlugcatPath
         }
 
     }
+
+
+
 
     public class PositionEntry
     {
@@ -325,8 +345,24 @@ public class SlugcatPath
             return pe.pos == this.pos && pe.roomNumber == this.roomNumber;
         }
 
-        
+        public override int GetHashCode()
+        {
+            int hashCode = -874986084;
+            hashCode = hashCode * -1521134295 + roomNumber.GetHashCode();
+            hashCode = hashCode * -1521134295 + pos.GetHashCode();
+            return hashCode;
+        }
     }
 
 
+}
+
+
+static class ExtensionsMethods {
+
+    public static List<SlugcatPath.PositionEntry> regionDataOrNew(this Dictionary<string, List<SlugcatPath.PositionEntry>> dictionary, string region)
+    {
+        if (!dictionary.ContainsKey(region)) dictionary.Add(region, new());
+        return dictionary[region];
+    }
 }

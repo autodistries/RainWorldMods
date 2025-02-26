@@ -26,13 +26,16 @@ public partial class ModMainClass : BaseUnityPlugin
     private bool modEnabled = true;
     int twoPerSecondPlease = 0;
 
-    SlugcatPath path = new();
+    internal static SlugcatPath path = new();
 
     public static bool debug = true;
     private ModOptions options;
 
     public ModMainClass()
     {
+        try
+        {
+            
         On.Player.Update += traceCurrentSlugcatPosition;
         
         On.HUD.Map.Update += createMapPather; // this is a debug function and can be removed
@@ -42,28 +45,31 @@ public partial class ModMainClass : BaseUnityPlugin
         
         On.HUD.Map.ctor += updateMapObj;    
 
+        On.RegionState.RainCycleTick += clearPastDataPlease;
 
-        // On.HUD.HUD.ResetMap += storeCurrentRegion;
-
-        // On.PlayerProgression.LoadMapTexture += clearPaths;
-        // On.HUD.Map.ResetReveal += resetMapPather;
         SlugcatPath.Logger = Logger;
-        options = new ModOptions(Logger);
+        options = new ModOptions(Logger);        }
+        catch (System.Exception ex)
+        {
+            
+            Console.WriteLine("Ow, crash !" + ex);
+        }
+
     }
 
-    // private void storeCurrentRegion(On.HUD.HUD.orig_ResetMap orig, HUD.HUD self, HUD.Map.MapData mapData)
-    // {
-    //     Logger.LogInfo("ResetMap!!");
-    //     MetaPathStore.SyncColdFiles();
-    //     orig(self, mapData);
-    // }
-
-    // private void clearPaths(On.PlayerProgression.orig_LoadMapTexture orig, PlayerProgression self, string regionName)
-    // {
-    //     path.checkDirtyPositions(regionName);
-
-    //     orig(self ,regionName);
-    // }
+    private void clearPastDataPlease(On.RegionState.orig_RainCycleTick orig, RegionState self, int ticks, int foodRepBonus)
+    {
+        orig(self, ticks, foodRepBonus);
+        if (ModOptions.doClearDataOnNewCycle.Value) {
+            Logger.LogInfo("New Cycle Tick, clearing past data");
+            path.clearLines();
+            path.clearPositions();
+            SlugcatPath.lastNRooms.Clear();
+            var slugcat = path.GetSlugcat();
+            if (slugcat == null)slugcat = self.world.game.rainWorld.progression.miscProgressionData.currentlySelectedSinglePlayerSlugcat;
+            MetaPathStore.StoreSlugcat(new(), self.world.game.rainWorld.options.saveSlot, slugcat);
+        }
+    }
 
     private void updateMapObj(On.HUD.Map.orig_ctor orig, HUD.Map self, HUD.HUD hud, HUD.Map.MapData mapData)
     {
@@ -80,13 +86,6 @@ public partial class ModMainClass : BaseUnityPlugin
         path.appendNewLines(self);
     }
 
-    // private void resetMapPather(On.HUD.Map.orig_ResetReveal orig, HUD.Map self)
-    // {
-    //     orig(self);
-    //     path.processLines(self);
-    //     Logger.LogInfo("REsetReveal !");
-    // }
-
     private void updateMapPather(On.HUD.Map.orig_Draw orig, HUD.Map self, float timeStacker)
     {
         orig(self, timeStacker);
@@ -100,12 +99,17 @@ public partial class ModMainClass : BaseUnityPlugin
     private void traceCurrentSlugcatPosition(On.Player.orig_Update orig, Player self, bool eu)
     {
         orig(self, eu);
+        if (!ModOptions.doRecordData.Value) return;
+        if (path.map == null || self.slugcatStats.name != path.GetSlugcat()) {
+            Logger.LogWarning($"Not registering position of lsugcat {self.slugcatStats.name} as {((path.map == null) ? "map is null" : $"sc is supposed to be {path.GetSlugcat()}")}");
+            return;
+        }
         twoPerSecondPlease++;
-        twoPerSecondPlease %= 60;
+        twoPerSecondPlease %= ModOptions.minTicksToRecordPoint.Value;
         if (twoPerSecondPlease != 0) return;
-        if (path.slugcatPositions.ContainsKey(path.CurrentRegion) && path.slugcatPositions[path.CurrentRegion].Count != 0 && (self.MapOwnerInRoomPosition - path.slugcatPositions[path.CurrentRegion].LastOrDefault().pos).magnitude < 0.4 ) return;
+        if (path.slugcatPositions.ContainsKey(path.CurrentRegion) && path.slugcatPositions[path.CurrentRegion].Count != 0 && (self.MapOwnerInRoomPosition - path.slugcatPositions[path.CurrentRegion].LastOrDefault().pos).magnitude < ModOptions.minDistanceToRecordPointTimes100.Value/100.0f ) return;
         path.addNewPosition(new(self.MapOwnerRoom, self.MapOwnerInRoomPosition));
-        Logger.LogInfo($"Added {path.slugcatPositions.LastOrDefault()}");
+        // Logger.LogInfo($"Added {path.slugcatPositions.LastOrDefault()}");
     }
 
     private void createMapPather(On.HUD.Map.orig_Update orig, HUD.Map self)
@@ -124,7 +128,7 @@ public partial class ModMainClass : BaseUnityPlugin
             Logger.LogInfo($"debug : {debug}");
         }
         if (Input.GetKeyDown("j")) {
-            MetaPathStore.SyncColdFiles();
+            MetaPathStore.WriteColdFiles();
 
         }
 

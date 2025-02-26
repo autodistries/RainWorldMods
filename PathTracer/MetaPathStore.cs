@@ -22,11 +22,11 @@ public static class MetaPathStore
     static Dictionary<int,
                Dictionary<SlugcatStats.Name,
                    Dictionary<string,
-                       PositionEntry[]>>> data = new();
+                       IEnumerable<PositionEntry>>>> data = new();
     private static object _lock = new object();
     private static bool modifiedSinceLastWrite = true;
 
-    private static string targetStorageFile = Path.Combine(Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location), "tracker.json");
+    public static string targetStorageFile = Path.Combine(Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location), "tracker.json");
 
     static MetaPathStore()
     {
@@ -50,7 +50,7 @@ public static class MetaPathStore
     /// <param name="saveSlot"></param>
     /// <param name="slugcat"></param>
     /// <returns></returns>
-    public static Dictionary<string, PositionEntry[]> LoadDataFor(int saveSlot, SlugcatStats.Name slugcat)
+    public static Dictionary<string, IEnumerable<PositionEntry>> LoadDataFor(int saveSlot, SlugcatStats.Name slugcat)
     {
         Console.WriteLine($"LOADER {saveSlot} for {slugcat}");
         // saveSlot : manager.rainWorld.options.saveSlot
@@ -85,26 +85,52 @@ public static class MetaPathStore
     public static void StoreRegion(IEnumerable<PositionEntry> positions, int saveSlot, SlugcatStats.Name slugcat, string region)
     {
         modifiedSinceLastWrite = true;
+        Console.WriteLine($"SYNC attempt for saveSlot {saveSlot} slugcat {slugcat} region {region}");
         if (!data.ContainsKey(saveSlot)) data.Add(saveSlot, []);
         if (!data[saveSlot].ContainsKey(slugcat)) data[saveSlot].Add(slugcat, []);
-        if (!data[saveSlot][slugcat].ContainsKey(region)) {data[saveSlot][slugcat].Add(region, positions.ToArray()); return;}
+        if (!data[saveSlot][slugcat].ContainsKey(region)) {data[saveSlot][slugcat].Add(region, positions.ToArray());}
+        else {
         if (data[saveSlot][slugcat][region].Count() == positions.Count() && positions.Count() != 0 && positions.FirstOrDefault().Equals( data[saveSlot][slugcat][region].FirstOrDefault()) && positions.LastOrDefault().Equals(data[saveSlot][slugcat][region].LastOrDefault())) {
             // No modifications
             modifiedSinceLastWrite = false;
             return;
         }
-        data[saveSlot][slugcat][region] = positions.ToArray();
+        data[saveSlot][slugcat][region] = positions.ToArray();}
 
         Console.WriteLine($"SYNC synced {saveSlot}, {slugcat}, {region}, {positions.Count()} records to data blob");
+    }
+
+
+
+    public static void StoreSlugcat(Dictionary<string, IEnumerable<PositionEntry>> slugcatData, int saveSlot, SlugcatStats.Name slugcat)
+    {
+        Console.WriteLine($"SYNC attempt for saveSlot {saveSlot} slugcat {slugcat}");
+        modifiedSinceLastWrite = true;
+        if (!data.ContainsKey(saveSlot)) data.Add(saveSlot, []);
+        if (!data[saveSlot].ContainsKey(slugcat)) data[saveSlot].Add(slugcat, slugcatData);
+        else
+        {
+
+            if (data[saveSlot][slugcat].GetHashCode() == slugcatData.GetHashCode())
+            {
+                // No modifications
+                modifiedSinceLastWrite = false;
+                return;
+            }
+        data[saveSlot][slugcat] = slugcatData;
+        }
+
+        Console.WriteLine($"SYNC synced {saveSlot}, {slugcat}, {slugcatData.Count()} regions to data blob");
     }
 
 
     /// <summary>
     /// write the data object to disk. Might need to get threeeaded, and lock'd
     /// </summary>
-    public async static void SyncColdFiles()
+    public async static void WriteColdFiles()
     {
         if (!modifiedSinceLastWrite) return;
+        if (!ModOptions.doWriteData.Value) return;
         else modifiedSinceLastWrite = false;
         Console.WriteLine($"WRITER going to write");
 
@@ -130,32 +156,32 @@ public static class MetaPathStore
     /// <summary>
     /// Loads Tracker data into memory. COmpletely overwrites previous data. SHuold be ran only once, early
     /// </summary>
-    public async static void TryLoadFromCold()
+    public async static Task<Dictionary<int, Dictionary<SlugcatStats.Name, Dictionary<string, IEnumerable<PositionEntry>>>>> TryLoadFromCold(bool inplace = true)
     {
         modifiedSinceLastWrite = false;
         Console.WriteLine("READER going to read");
+        Dictionary<int, Dictionary<SlugcatStats.Name, Dictionary<string, IEnumerable<PositionEntry>>>> outData = [];
         var stopwatch = new Stopwatch();
         stopwatch.Start();
         await Task.Run(() =>
                 {
-                        Console.WriteLine("in task !");
                     lock (_lock)
                     {
-                        Console.WriteLine("In lock !");
-                        Dictionary<int, Dictionary<SlugcatStats.Name, Dictionary<string, PositionEntry[]>>> outData = [];
+                        
                         if (File.Exists(targetStorageFile))
                         {
-                        Console.WriteLine("in exists !");
-                            outData = JsonConvert.DeserializeObject<Dictionary<int, Dictionary<SlugcatStats.Name, Dictionary<string, PositionEntry[]>>>>(File.ReadAllText(targetStorageFile), serializerSettings);
+                            outData = JsonConvert.DeserializeObject<Dictionary<int, Dictionary<SlugcatStats.Name, Dictionary<string, IEnumerable<PositionEntry>>>>>(File.ReadAllText(targetStorageFile), serializerSettings);
 
                             Console.WriteLine($"READER Cold data: \n{outData}\n{DescribeData(outData)}");
                         }
                         Console.WriteLine("READER tried LoadFromCold.");
-                        data = outData;
+                        if (inplace) data = outData;
                     }
                 });
         stopwatch.Stop();
         Console.WriteLine($"READER took {stopwatch.ElapsedMilliseconds}ms");
+        if (inplace) return null;
+        return outData;
 
 
        
@@ -171,6 +197,30 @@ public static class MetaPathStore
         return DescribeData(data);
     }
 
+    public static async Task<string> DescribeDataFriendly() {
+        Dictionary<int, Dictionary<SlugcatStats.Name, Dictionary<string, IEnumerable<PositionEntry>>>> dd = await TryLoadFromCold(false);
+        string r = "File: "+targetStorageFile + "\n";
+        if (File.Exists(targetStorageFile)) r+= "File size is " + new FileInfo(targetStorageFile).Length/1024f+"kB\n";
+        else r+= "Files does not exist\n";
+        foreach (var level1 in dd)
+        {
+            r += "---- start save slot " +level1.Key + "\n";
+            foreach (var level2 in level1.Value)
+            {
+                r += "   " + level2.Key + " [";
+                foreach (var level3 in level2.Value)
+                {
+                    if (r[r.Length-1] != '[') r+=", ";
+                    r +=level3.Key + ":"+level3.Value.Count()+":"+level3.Value.Select((el) => el.roomNumber).Distinct().Count();                   
+                }
+                r += "]\n";
+            }
+            r += "---- end save slot "+level1.Key+"\n";
+        }
+
+        return r;
+    }
+
 
     /// <summary>
     /// Puts data dd in a string/jsonified manner, for debug purposes.
@@ -180,7 +230,7 @@ public static class MetaPathStore
     private static string DescribeData(Dictionary<int,
                 Dictionary<SlugcatStats.Name,
                     Dictionary<string,
-                        PositionEntry[]>>> dd)
+                        IEnumerable<PositionEntry>>>> dd)
     {
         string r = "";
         foreach (var level1 in dd)
@@ -204,6 +254,11 @@ public static class MetaPathStore
         }
 
         return r;
+    }
+
+    internal static void ResetData()
+    {
+        data       = new();
     }
 }
 
