@@ -56,6 +56,7 @@ public class ModOptions : OptionInterface
         maxRoomsToRememberPerRegion = config.Bind("maxRoomsToRememberPerRegion", 8, maxRoomsRange);
         minTicksToRecordPoint = config.Bind("minTicksToRecordPoint", 20, minTicksRange);
         minDistanceToRecordPointTimes100 = config.Bind("minDistanceToRecordPointTimes100", 8, minDistRange);
+        minDistanceToRecordPointTimes100.key = "what the fuck";
         Logger.LogInfo("Configurables binded ");
     }
     public override void Initialize()
@@ -73,7 +74,7 @@ public class ModOptions : OptionInterface
         var recordDataLabel = new OpLabel(43f, Decalage(), "Enable recording data from slugcat");
         var recordDataBox = new OpCheckBox(doRecordData, new Vector2(10f, Decalage(box: true, nextLine: true)))
         {
-            description = $"Record data of slugcats when moving"
+            description = $"Record data of slugcats' position when moving"
         };
 
         var showDataLabel = new OpLabel(43f, Decalage(), "Enable showing data on maps");
@@ -106,6 +107,7 @@ public class ModOptions : OptionInterface
         {
             description = $"Minimum amount of ticks required to save a position"
         };
+        
 
         var minDistLabel = new OpLabel(10f, Decalage(), "Minimum distance");
         var minDistSlider = new OpSlider(minDistanceToRecordPointTimes100, new Vector2(180f, Decalage(slider: true, nextBtn: true)), 240)
@@ -153,7 +155,7 @@ public class ModOptions : OptionInterface
         {
             if (File.Exists(MetaPathStore.targetStorageFile)) File.Delete(MetaPathStore.targetStorageFile);
             MetaPathStore.ResetData();
-            ModMainClass.path = new();
+            ModMainClass.path.SetNewPositions(new());
             Console.WriteLine("Deleteed tracker.json");
             FireUpdateRésuméBox(dataRésuméTextBox, dataRésuméScrollBox);
         };
@@ -197,7 +199,7 @@ public class ModOptions : OptionInterface
     private async void FireUpdateRésuméBox(OpLabelLong dataRésuméTextBox, OpScrollBox sb)
     {
         Logger.LogInfo("FireUpdateRésuméBox start");
-        dataRésuméTextBox.text = (await MetaPathStore.DescribeDataFriendly()).WrapText(false, 620);
+        dataRésuméTextBox.text = (MetaPathStore.DescribeDataFriendly()).WrapText(false, 620);
         dataRésuméTextBox.size = new Vector2(560f, Mathf.Max(30f, dataRésuméTextBox.GetDisplaySize().y));
         Logger.LogInfo("FireUpdateRésuméBox end! content length: "+dataRésuméTextBox.text.Split('\n').Length);
         sb.contentSize = dataRésuméTextBox.size.y + 10f;

@@ -1,5 +1,6 @@
 ﻿using BepInEx;
 using System;
+using System.IO;
 using System.Linq;
 
 
@@ -43,7 +44,9 @@ public partial class ModMainClass : BaseUnityPlugin
 
         On.HUD.Map.Draw += updateMapPather; // this is triggered all of the time a Map obj exists
         
-        On.HUD.Map.ctor += updateMapObj;    
+        On.HUD.Map.ctor += updateMapObj;  
+        // On.HUD.Map.Update += updateMapObjAgain;  
+        On.HUD.Map.DestroyTextures += notifyDestroyTextures;
 
         On.RegionState.RainCycleTick += clearPastDataPlease;
 
@@ -57,25 +60,26 @@ public partial class ModMainClass : BaseUnityPlugin
 
     }
 
+    private void notifyDestroyTextures(On.HUD.Map.orig_DestroyTextures orig, HUD.Map self)
+    {
+       orig(self);
+       Logger.LogWarning("DESTROY TEXTURES");
+    }
+
     private void clearPastDataPlease(On.RegionState.orig_RainCycleTick orig, RegionState self, int ticks, int foodRepBonus)
     {
         orig(self, ticks, foodRepBonus);
         if (ModOptions.doClearDataOnNewCycle.Value) {
-            Logger.LogInfo("New Cycle Tick, clearing past data");
-            path.clearLines();
-            path.clearPositions();
-            SlugcatPath.lastNRooms.Clear();
-            var slugcat = path.GetSlugcat();
-            if (slugcat == null)slugcat = self.world.game.rainWorld.progression.miscProgressionData.currentlySelectedSinglePlayerSlugcat;
-            MetaPathStore.StoreSlugcat(new(), self.world.game.rainWorld.options.saveSlot, slugcat);
+            SlugcatPath.cycleTick = true;
+            Logger.LogInfo("Cycle tick set to true");
         }
     }
 
     private void updateMapObj(On.HUD.Map.orig_ctor orig, HUD.Map self, HUD.HUD hud, HUD.Map.MapData mapData)
     {
         orig(self, hud, mapData);
-        path.appendNewLines(newMap: self);
         if (debug) Logger.LogInfo("Changed map obj!");
+        path.SetNewMap(self);
 
     }
 
@@ -83,17 +87,15 @@ public partial class ModMainClass : BaseUnityPlugin
     {
         orig(self);
         if (debug) Logger.LogInfo("Initiating view!");
-        path.appendNewLines(self);
+        path.appendNewLines();
     }
 
     private void updateMapPather(On.HUD.Map.orig_Draw orig, HUD.Map self, float timeStacker)
     {
         orig(self, timeStacker);
-        // if (self.lastFade == self.fade && self.fade == 0f ) return;
-        if (self.lastFade == self.fade) {
-            if ((self.fade != 1 || self.panVel.magnitude <= 0.1) && self.depth == self.lastDepth) return;
-        } 
-        path.UpdateLines(timeStacker);
+
+        if (self.lastFade != self.fade || self.depth != self.lastDepth || (self.fade != 0 && self.panVel.magnitude >=0.01) || self.fade is not 0 or 1)
+            path.UpdateLines(timeStacker);
     }
 
     private void traceCurrentSlugcatPosition(On.Player.orig_Update orig, Player self, bool eu)
@@ -104,6 +106,7 @@ public partial class ModMainClass : BaseUnityPlugin
             Logger.LogWarning($"Not registering position of lsugcat {self.slugcatStats.name} as {((path.map == null) ? "map is null" : $"sc is supposed to be {path.GetSlugcat()}")}");
             return;
         }
+        if (path.QueryMode() != SlugcatPath.MapMode.WRITEREAD) return;
         twoPerSecondPlease++;
         twoPerSecondPlease %= ModOptions.minTicksToRecordPoint.Value;
         if (twoPerSecondPlease != 0) return;
@@ -117,28 +120,51 @@ public partial class ModMainClass : BaseUnityPlugin
         orig(self);
       
 
-        if (Input.GetKeyDown("m"))
-        {
-            path.appendNewLines(self);
-        }
-
+      
         if (Input.GetKeyDown("l"))
         {
-            debug = !debug;
-            Logger.LogInfo($"debug : {debug}");
+            Logger.LogInfo($"forcing data load : for ss {self.hud.rainWorld.options.saveSlot} sc {path.GetSlugcat()}");
+            path.SetNewPositions(self.hud.rainWorld.options.saveSlot, path.GetSlugcat());
+            Logger.LogInfo($"data load end for ss {self.hud.rainWorld.options.saveSlot} sc {path.GetSlugcat()}");
+
+
         }
         if (Input.GetKeyDown("j")) {
+            Logger.LogInfo("Forcing write cold files");
+            MetaPathStore.modifiedSinceLastWrite = true;
             MetaPathStore.WriteColdFiles();
+            MetaPathStore.WriteColdFileCustomAsync();
+            Logger.LogInfo("End write cold files");
 
         }
 
         if (Input.GetKeyDown("k")) {
-            MetaPathStore.TryLoadFromCold();
+            Logger.LogInfo($"forcing data store : for ss {self.hud.rainWorld.options.saveSlot} sc {path.GetSlugcat()} regon {path.CurrentRegion}");
+
+                            MetaPathStore.StoreRegion(path.slugcatPositions.regionDataOrNew(path.CurrentRegion), path.map.hud.rainWorld.options.saveSlot, path.GetSlugcat(), path.CurrentRegion);
+            Logger.LogInfo($"end force data store : for ss {self.hud.rainWorld.options.saveSlot} sc {path.GetSlugcat()} regon {path.CurrentRegion}");
+
         }
 
-        if (Input.GetKeyDown("h")) {
-            Logger.LogInfo($"Current data obj :\n{MetaPathStore.DescribeData()}\n");
+                  if (Input.GetKeyDown("h")) {
+            Logger.LogInfo("Forcing READ files");
+            MetaPathStore.TryLoadFromCold();
+            Logger.LogInfo("End READ files");
         }
+
+        if (Input.GetKeyDown("n")) {
+            Logger.LogInfo("Forcing write CUSTOM files");
+            MetaPathStore.modifiedSinceLastWrite = true;
+            MetaPathStore.WriteColdFileCustomAsync();
+            Logger.LogInfo("End write CUSTOM files");
+        }
+
+                if (Input.GetKeyDown("v")) {
+            Logger.LogInfo("Forcing READ CUSTOM files");
+            MetaPathStore.TryLoadFromColdCustom();
+            Logger.LogInfo("End READ CUSTOM files");
+        }
+
 
     }
 
@@ -162,7 +188,6 @@ public partial class ModMainClass : BaseUnityPlugin
         if (MachineConnector.SetRegisteredOI(PluginInfo.PLUGIN_GUID, options))
         {
             Logger.LogInfo("Registered Mod Interface");
-
         }
         else
         {
