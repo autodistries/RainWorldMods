@@ -16,9 +16,11 @@ public class ModOptions : OptionInterface
     static public Configurable<bool> doRecordData;
     static public Configurable<bool> doShowData;
     static public Configurable<bool> doWriteData;
-    static public Configurable<bool> doClearDataOnNewCycle;
+    static public Configurable<bool> doRecordSlugpupData;
     static public Configurable<int> maxRoomsToRememberPerRegion;
     static ConfigAcceptableRange<int> maxRoomsRange = new(2, 30);
+    static public Configurable<int> maxCyclesToRemember;
+    static ConfigAcceptableRange<int> maxCyclesRange = new(0, 6);
     static public Configurable<int> minTicksToRecordPoint;
     static ConfigAcceptableRange<int> minTicksRange = new(5, 80);
     static public Configurable<int> minDistanceToRecordPointTimes100;
@@ -52,8 +54,9 @@ public class ModOptions : OptionInterface
         doRecordData = config.Bind("doRecordData", true);
         doShowData = config.Bind("doShowData", true);
         doWriteData = config.Bind("doWriteData", true);
-        doClearDataOnNewCycle = config.Bind("doClearDataOnNewCycle", true);
+        doRecordSlugpupData = config.Bind("doClearDataOnNewCycle", true);
         maxRoomsToRememberPerRegion = config.Bind("maxRoomsToRememberPerRegion", 8, maxRoomsRange);
+        maxCyclesToRemember = config.Bind("maxCyclesToRemember", 1, maxCyclesRange);
         minTicksToRecordPoint = config.Bind("minTicksToRecordPoint", 20, minTicksRange);
         minDistanceToRecordPointTimes100 = config.Bind("minDistanceToRecordPointTimes100", 8, minDistRange);
         minDistanceToRecordPointTimes100.key = "what the fuck";
@@ -83,82 +86,88 @@ public class ModOptions : OptionInterface
             description = $"Show path data when any map is open"
         };
 
-        var writeDataLabel = new OpLabel(43f, Decalage(), "Enable writing data on disk");
-        var writeDataBox = new OpCheckBox(doWriteData, new Vector2(10f, Decalage(box: true, nextLine: true)))
-        {
-            description = $"Recorded data will be stored on your hard drive.\nIf not, any recorded data will be forgotten on game restart."
-        };
+        // var writeDataLabel = new OpLabel(43f, Decalage(), "Enable writing data on disk");
+        // var writeDataBox = new OpCheckBox(doWriteData, new Vector2(10f, Decalage(box: true, nextLine: true)))
+        // {
+        //     description = $"Recorded data will be stored on your hard drive.\nIf not, any recorded data will be forgotten on game restart."
+        // };
 
-        var singleCycleDataLabel = new OpLabel(43f, Decalage(), "Enable clearing data on new cycle");
-        var singleCycleDataBox = new OpCheckBox(doClearDataOnNewCycle, new Vector2(10f, Decalage(box: true, nextLine: true)))
+        // var singleCycleDataLabel = new OpLabel(43f, Decalage(), "Enable to record data for slugpups");
+        // var singleCycleDataBox = new OpCheckBox(doRecordSlugpupData, new Vector2(10f, Decalage(box: true, nextLine: true)))
+        // {
+        //     description = $"Also record data of your slugpups"
+        // };
+
+        var maxCyclesToRememberLabel = new OpLabel(10f, Decalage(), "Max cycles to retain positions");
+        var maxCyclesToRememberSlider = new OpSlider(maxCyclesToRemember, new Vector2(180f, Decalage(slider: true, nextLine: true)), 240)
         {
-            description = $"When starting a new cycle, previously recorded data for this slugcat will be cleared"
+            description = $"Maximum number of cycles positions will be remembered. 0 means clear on new cycle. Their opacity will be reduced over time"
         };
 
         var maxRoomsPerRegionLabel = new OpLabel(10f, Decalage(), "Max rooms per region");
         var maxRoomsPerRegionSlider = new OpSlider(maxRoomsToRememberPerRegion, new Vector2(180f, Decalage(slider: true, nextLine: true)), 240)
         {
-            description = $"Maximum number of different rooms to keep data from, per region, per slugcat, and per save slot"
+            description = $"Maximum number of different rooms to keep data from, per region and per slugcat"
         };
 
 
-        var minTicksLabel = new OpLabel(10f, Decalage(), "Minimum ticks");
+        var minTicksLabel = new OpLabel(10f, Decalage(), "Minimum ticks per pos");
         var minTicksSlider = new OpSlider(minTicksToRecordPoint, new Vector2(180f, Decalage(slider: true, nextLine: true)), 240)
         {
             description = $"Minimum amount of ticks required to save a position"
         };
         
 
-        var minDistLabel = new OpLabel(10f, Decalage(), "Minimum distance");
+        var minDistLabel = new OpLabel(10f, Decalage(), "Minimum distance per pos");
         var minDistSlider = new OpSlider(minDistanceToRecordPointTimes100, new Vector2(180f, Decalage(slider: true, nextBtn: true)), 240)
         {
             description = $"Minimum distance required for saving a position. Actual value vill be /100",
         };
 
-        var openFileBtn = new OpSimpleButton(new(10f, Decalage(nextBtn:true)), new(120, 30), "Open folder") {
-            description = "Open the folder where tracker.json is stored"
-        };
-        openFileBtn.OnClick += (_) =>
-        {
-            Console.WriteLine("OPen btn cliekced");
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-            {
-                Process.Start(new ProcessStartInfo("explorer.exe", $"/select,{MetaPathStore.targetStorageFile}") { UseShellExecute = true });
-            }
-            // these two are never happening huh, when linux port???!,!,,,
-            else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-            {
-                Process.Start(new ProcessStartInfo("xdg-open", MetaPathStore.targetStorageFile) { UseShellExecute = true });
-            }
-            else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
-            {
-                Process.Start(new ProcessStartInfo("open", $"-R {MetaPathStore.targetStorageFile}") { UseShellExecute = true });
-            }
-        };
+        // var openFileBtn = new OpSimpleButton(new(10f, Decalage(nextBtn:true)), new(120, 30), "Open folder") {
+        //     description = "Open the folder where tracker.json is stored"
+        // };
+        // openFileBtn.OnClick += (_) =>
+        // {
+        //     Console.WriteLine("OPen btn cliekced");
+        //     if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+        //     {
+        //         Process.Start(new ProcessStartInfo("explorer.exe", $"/select,{MetaPathStore.targetStorageFile}") { UseShellExecute = true });
+        //     }
+        //     // these two are never happening huh, when linux port???!,!,,,
+        //     else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+        //     {
+        //         Process.Start(new ProcessStartInfo("xdg-open", MetaPathStore.targetStorageFile) { UseShellExecute = true });
+        //     }
+        //     else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+        //     {
+        //         Process.Start(new ProcessStartInfo("open", $"-R {MetaPathStore.targetStorageFile}") { UseShellExecute = true });
+        //     }
+        // };
 
 
-        var deleteFileBtn = new OpHoldButton(new(10f, Decalage(nextBtn: true)), new Vector2(120, 30), "Delete tracker.json", 80) {
-            description = "Delete the tracker.json. This is irreversible ! Data loaded to memory will also be cleared."
-        };
-        // button open file
-        // textbox with data résumé
-        // button delete data
+        // var deleteFileBtn = new OpHoldButton(new(10f, Decalage(nextBtn: true)), new Vector2(120, 30), "Delete tracker.json", 80) {
+        //     description = "Delete the tracker.json. This is irreversible ! Data loaded to memory will also be cleared."
+        // };
+        // // button open file
+        // // textbox with data résumé
+        // // button delete data
 
-        var dataRésuméTextBox = new OpLabelLong(new(10f, 10f), new Vector2(350, 100), "Loading the data overview...") {
-            autoWrap = false
-        };
+        // var dataRésuméTextBox = new OpLabelLong(new(10f, 10f), new Vector2(350, 100), "Loading the data overview...") {
+        //     autoWrap = false
+        // };
         
 
-        var dataRésuméScrollBox =  new OpScrollBox(new Vector2(5f, Decalage() - 180f), new Vector2(590f, 200f), dataRésuméTextBox.size.y + 10f);
+        // var dataRésuméScrollBox =  new OpScrollBox(new Vector2(5f, Decalage() - 180f), new Vector2(590f, 200f), dataRésuméTextBox.size.y + 10f);
         
-        deleteFileBtn.OnPressDone += (_) =>
-        {
-            if (File.Exists(MetaPathStore.targetStorageFile)) File.Delete(MetaPathStore.targetStorageFile);
-            MetaPathStore.ResetData();
-            ModMainClass.path.SetNewPositions(new());
-            Console.WriteLine("Deleteed tracker.json");
-            FireUpdateRésuméBox(dataRésuméTextBox, dataRésuméScrollBox);
-        };
+        // deleteFileBtn.OnPressDone += (_) =>
+        // {
+        //     if (File.Exists(MetaPathStore.targetStorageFile)) File.Delete(MetaPathStore.targetStorageFile);
+        //     MetaPathStore.ResetData();
+        //     ModMainClass.path.SetNewPositions(new());
+        //     Console.WriteLine("Deleteed tracker.json");
+        //     FireUpdateRésuméBox(dataRésuméTextBox, dataRésuméScrollBox);
+        // };
         UIelement[] UIArrPlayerOptions = new UIelement[]
         {
             new OpLabel(10f, 550f, "Path Tracer Options", true),
@@ -168,14 +177,16 @@ public class ModOptions : OptionInterface
             showDataLabel,
             showDataBox,
 
-            writeDataLabel,
-            writeDataBox,
+            // writeDataLabel,
+            // writeDataBox,
+            maxCyclesToRememberLabel,
+            maxCyclesToRememberSlider,
 
             maxRoomsPerRegionLabel,
             maxRoomsPerRegionSlider,
 
-            singleCycleDataLabel,
-            singleCycleDataBox,
+            // singleCycleDataLabel,
+            // singleCycleDataBox,
 
             minTicksLabel,
             minTicksSlider,
@@ -183,26 +194,17 @@ public class ModOptions : OptionInterface
             minDistLabel,
             minDistSlider,
 
-            openFileBtn,
-            deleteFileBtn,
+            // openFileBtn,
+            // deleteFileBtn,
 
-            dataRésuméScrollBox
+            // dataRésuméScrollBox
 
         };
 
-        FireUpdateRésuméBox(dataRésuméTextBox, dataRésuméScrollBox);
+        // FireUpdateRésuméBox(dataRésuméTextBox, dataRésuméScrollBox);
 
         opTab.AddItems(UIArrPlayerOptions);
-        dataRésuméScrollBox.AddItems(dataRésuméTextBox);
+        // dataRésuméScrollBox.AddItems(dataRésuméTextBox);
     }
 
-    private async void FireUpdateRésuméBox(OpLabelLong dataRésuméTextBox, OpScrollBox sb)
-    {
-        Logger.LogInfo("FireUpdateRésuméBox start");
-        dataRésuméTextBox.text = (MetaPathStore.DescribeDataFriendly()).WrapText(false, 620);
-        dataRésuméTextBox.size = new Vector2(560f, Mathf.Max(30f, dataRésuméTextBox.GetDisplaySize().y));
-        Logger.LogInfo("FireUpdateRésuméBox end! content length: "+dataRésuméTextBox.text.Split('\n').Length);
-        sb.contentSize = dataRésuméTextBox.size.y + 10f;
-        dataRésuméTextBox.SetPos(new Vector2(10f, 6f));
-    }
 }

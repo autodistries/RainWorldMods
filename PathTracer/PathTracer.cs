@@ -1,5 +1,6 @@
 ﻿using BepInEx;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
@@ -48,7 +49,16 @@ public partial class ModMainClass : BaseUnityPlugin
         // On.HUD.Map.Update += updateMapObjAgain;  
         On.HUD.Map.DestroyTextures += notifyDestroyTextures;
 
-        On.RegionState.RainCycleTick += clearPastDataPlease;
+        // On.RegionState.RainCycleTick += tickPositions;
+        // On.SaveState.RainCycleTick += tickPositions;
+
+            // On.SaveState.LoadGame += tickPositions;
+            // On.Menu.SlugcatSelectMenu.ContinueStartedGame += tickPositions;
+            // On.Menu.SlugcatSelectMenu.StartGame += tickPositions;
+            //try SlugcatSelectMenu.StartGame
+            // SlugcatSelectMenu.ContinueStartedGame  !!!!!!!!!!
+            // On.ProcessManager.RequestMainProcessSwitch_ProcessID_float += bordelfontionnnebatard;
+            On.RainWorldGame.ctor += aledjemeurs;
 
         SlugcatPath.Logger = Logger;
         options = new ModOptions(Logger);        }
@@ -60,19 +70,60 @@ public partial class ModMainClass : BaseUnityPlugin
 
     }
 
+    private void aledjemeurs(On.RainWorldGame.orig_ctor orig, RainWorldGame self, ProcessManager manager)
+    {
+       orig(self, manager);
+        Logger.LogInfo($"NEW RainWorldGame AAAAAAAAAAAAAAAAAAAAAAAA IsStorySession:{self.IsStorySession} safari:{self.rainWorld.safariMode} arena:{self.IsArenaSession}");
+
+       if (self.IsStorySession  && !self.rainWorld.safariMode && !self.IsArenaSession) {
+        List<SlugcatStats.Name> names = new();
+        self.session.Players.ForEach((ac) => {
+
+                if (ac.realizedCreature != null && ac.realizedCreature is Player p) names.Add( p.slugcatStats.name);
+                else Logger.LogWarning("no realized player for creature "+ac);
+            });
+            Logger.LogInfo($"YEEHAWWWW ticking positions :33333333333333333333333333 we have {string.Join(", ",names)} players ");
+        SlugcatPath.CycleTick();
+
+       }
+       
+    }
+
+    // private void bordelfontionnnebatard(On.ProcessManager.orig_RequestMainProcessSwitch_ProcessID_float orig, ProcessManager self, ProcessManager.ProcessID ID, float fadeOutSeconds)
+    // {
+    //     orig(self, ID, fadeOutSeconds);
+    // }
+
+    // private void tickPositions(On.Menu.SlugcatSelectMenu.orig_StartGame orig, Menu.SlugcatSelectMenu self, SlugcatStats.Name storyGameCharacter)
+    // {
+    //    orig(self, storyGameCharacter);
+    //     Logger.LogWarning("BBBBBBBBB orig_ContinueStartedGame ran so we ticked");
+
+    // }
+
+    // private void tickPositions(On.Menu.SlugcatSelectMenu.orig_ContinueStartedGame orig, Menu.SlugcatSelectMenu self, SlugcatStats.Name storyGameCharacter)
+    // {
+    //     orig(self, storyGameCharacter);
+    //     Logger.LogWarning("AAAAAAAAAAAAAAAAA orig_ContinueStartedGame ran so we ticked");
+    // }
+
+    // private void tickPositions(On.SaveState.orig_LoadGame orig, SaveState self, string str, RainWorldGame game)
+    // {
+    //     orig(self, str, game);
+    //     Logger.LogWarning("CCCCCCCCCCCCC loadgame ran so");
+    //     // SlugcatPath.CycleTick();
+    // }
+
+    // private void tickPositions(On.SaveState.orig_RainCycleTick orig, SaveState self, RainWorldGame game, bool depleteSwarmRoom)
+    // {
+    //     orig(self, game, depleteSwarmRoom);
+    //     Logger.LogInfo(" DDDDDDDDDDDDDDDDDDDD SaveState.orig_RainCycleTick kfapoekpek");    }
+
     private void notifyDestroyTextures(On.HUD.Map.orig_DestroyTextures orig, HUD.Map self)
     {
        orig(self);
        Logger.LogWarning("DESTROY TEXTURES");
-    }
-
-    private void clearPastDataPlease(On.RegionState.orig_RainCycleTick orig, RegionState self, int ticks, int foodRepBonus)
-    {
-        orig(self, ticks, foodRepBonus);
-        if (ModOptions.doClearDataOnNewCycle.Value) {
-            SlugcatPath.cycleTick = true;
-            Logger.LogInfo("Cycle tick set to true");
-        }
+       path.SetNewMap(null);
     }
 
     private void updateMapObj(On.HUD.Map.orig_ctor orig, HUD.Map self, HUD.HUD hud, HUD.Map.MapData mapData)
@@ -101,18 +152,18 @@ public partial class ModMainClass : BaseUnityPlugin
     private void traceCurrentSlugcatPosition(On.Player.orig_Update orig, Player self, bool eu)
     {
         orig(self, eu);
+        if (self.isNPC) return;
+        if (self.inShortcut || self.room == null || self.room.world == null || self.room.world.region == null) return;
         if (!ModOptions.doRecordData.Value) return;
-        if (path.map == null || self.slugcatStats.name != path.GetSlugcat()) {
-            Logger.LogWarning($"Not registering position of lsugcat {self.slugcatStats.name} as {((path.map == null) ? "map is null" : $"sc is supposed to be {path.GetSlugcat()}")}");
-            return;
-        }
-        if (path.QueryMode() != SlugcatPath.MapMode.WRITEREAD) return;
+       
+
+        if (false && path.QueryMode() != SlugcatPath.MapMode.WRITEREAD) return;
         twoPerSecondPlease++;
         twoPerSecondPlease %= ModOptions.minTicksToRecordPoint.Value;
         if (twoPerSecondPlease != 0) return;
-        if (path.slugcatPositions.ContainsKey(path.CurrentRegion) && path.slugcatPositions[path.CurrentRegion].Count != 0 && (self.MapOwnerInRoomPosition - path.slugcatPositions[path.CurrentRegion].LastOrDefault().pos).magnitude < ModOptions.minDistanceToRecordPointTimes100.Value/100.0f ) return;
-        path.addNewPosition(new(self.MapOwnerRoom, self.MapOwnerInRoomPosition));
-        // Logger.LogInfo($"Added {path.slugcatPositions.LastOrDefault()}");
+        path.CurrentRegion = self.room.world.region.name;
+        if (SlugcatPath.slugcatRegionalPositions.TryGetValue(self.slugcatStats.name, out var regionalData) && regionalData.TryGetValue(self.room.world.region.name, out var positions) && positions.Count != 0 && (self.MapOwnerInRoomPosition - positions.LastOrDefault().pos).magnitude < ModOptions.minDistanceToRecordPointTimes100.Value/100.0f ) return;
+        path.addNewPosition(self.slugcatStats.name, new(self.MapOwnerRoom, self.MapOwnerInRoomPosition));
     }
 
     private void createMapPather(On.HUD.Map.orig_Update orig, HUD.Map self)
@@ -121,49 +172,7 @@ public partial class ModMainClass : BaseUnityPlugin
       
 
       
-        if (Input.GetKeyDown("l"))
-        {
-            Logger.LogInfo($"forcing data load : for ss {self.hud.rainWorld.options.saveSlot} sc {path.GetSlugcat()}");
-            path.SetNewPositions(self.hud.rainWorld.options.saveSlot, path.GetSlugcat());
-            Logger.LogInfo($"data load end for ss {self.hud.rainWorld.options.saveSlot} sc {path.GetSlugcat()}");
-
-
-        }
-        if (Input.GetKeyDown("j")) {
-            Logger.LogInfo("Forcing write cold files");
-            MetaPathStore.modifiedSinceLastWrite = true;
-            MetaPathStore.WriteColdFiles();
-            MetaPathStore.WriteColdFileCustomAsync();
-            Logger.LogInfo("End write cold files");
-
-        }
-
-        if (Input.GetKeyDown("k")) {
-            Logger.LogInfo($"forcing data store : for ss {self.hud.rainWorld.options.saveSlot} sc {path.GetSlugcat()} regon {path.CurrentRegion}");
-
-                            MetaPathStore.StoreRegion(path.slugcatPositions.regionDataOrNew(path.CurrentRegion), path.map.hud.rainWorld.options.saveSlot, path.GetSlugcat(), path.CurrentRegion);
-            Logger.LogInfo($"end force data store : for ss {self.hud.rainWorld.options.saveSlot} sc {path.GetSlugcat()} regon {path.CurrentRegion}");
-
-        }
-
-                  if (Input.GetKeyDown("h")) {
-            Logger.LogInfo("Forcing READ files");
-            MetaPathStore.TryLoadFromCold();
-            Logger.LogInfo("End READ files");
-        }
-
-        if (Input.GetKeyDown("n")) {
-            Logger.LogInfo("Forcing write CUSTOM files");
-            MetaPathStore.modifiedSinceLastWrite = true;
-            MetaPathStore.WriteColdFileCustomAsync();
-            Logger.LogInfo("End write CUSTOM files");
-        }
-
-                if (Input.GetKeyDown("v")) {
-            Logger.LogInfo("Forcing READ CUSTOM files");
-            MetaPathStore.TryLoadFromColdCustom();
-            Logger.LogInfo("End READ CUSTOM files");
-        }
+   
 
 
     }
@@ -174,7 +183,6 @@ public partial class ModMainClass : BaseUnityPlugin
     {
         if (done) return;
         Logger.LogInfo("Awake.");
-        MetaPathStore.TryLoadFromCold(); // load previous data from disk
         On.RainWorld.OnModsInit += RainWorldOnOnModsInitDetour;
         done = true;
         Logger.LogInfo("Done with init !");
