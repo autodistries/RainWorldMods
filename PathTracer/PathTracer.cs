@@ -40,7 +40,6 @@ public partial class ModMainClass : BaseUnityPlugin
             
         On.Player.Update += traceCurrentSlugcatPosition;
         
-        On.HUD.Map.Update += createMapPather; // this is a debug function and can be removed
         On.HUD.Map.InitiateMapView += addLinesToMapper; // this is triggered when the map is hidden and gets shown
 
         On.HUD.Map.Draw += updateMapPather; // this is triggered all of the time a Map obj exists
@@ -49,15 +48,6 @@ public partial class ModMainClass : BaseUnityPlugin
         // On.HUD.Map.Update += updateMapObjAgain;  
         On.HUD.Map.DestroyTextures += notifyDestroyTextures;
 
-        // On.RegionState.RainCycleTick += tickPositions;
-        // On.SaveState.RainCycleTick += tickPositions;
-
-            // On.SaveState.LoadGame += tickPositions;
-            // On.Menu.SlugcatSelectMenu.ContinueStartedGame += tickPositions;
-            // On.Menu.SlugcatSelectMenu.StartGame += tickPositions;
-            //try SlugcatSelectMenu.StartGame
-            // SlugcatSelectMenu.ContinueStartedGame  !!!!!!!!!!
-            // On.ProcessManager.RequestMainProcessSwitch_ProcessID_float += bordelfontionnnebatard;
             On.RainWorldGame.ctor += aledjemeurs;
 
         SlugcatPath.Logger = Logger;
@@ -79,50 +69,21 @@ public partial class ModMainClass : BaseUnityPlugin
         List<SlugcatStats.Name> names = new();
         self.session.Players.ForEach((ac) => {
 
-                if (ac.realizedCreature != null && ac.realizedCreature is Player p) names.Add( p.slugcatStats.name);
+                if (ac.state is PlayerState { slugcatCharacter: SlugcatStats.Name nam }) names.Add( nam);
                 else Logger.LogWarning("no realized player for creature "+ac);
+                
             });
-            Logger.LogInfo($"YEEHAWWWW ticking positions :33333333333333333333333333 we have {string.Join(", ",names)} players ");
-        SlugcatPath.CycleTick();
+            Logger.LogInfo($"YEEHAWWWW ticking positions :3333333333333333333333333");
+        SlugcatPath.CycleTick(names);
 
        }
        
     }
 
-    // private void bordelfontionnnebatard(On.ProcessManager.orig_RequestMainProcessSwitch_ProcessID_float orig, ProcessManager self, ProcessManager.ProcessID ID, float fadeOutSeconds)
-    // {
-    //     orig(self, ID, fadeOutSeconds);
-    // }
-
-    // private void tickPositions(On.Menu.SlugcatSelectMenu.orig_StartGame orig, Menu.SlugcatSelectMenu self, SlugcatStats.Name storyGameCharacter)
-    // {
-    //    orig(self, storyGameCharacter);
-    //     Logger.LogWarning("BBBBBBBBB orig_ContinueStartedGame ran so we ticked");
-
-    // }
-
-    // private void tickPositions(On.Menu.SlugcatSelectMenu.orig_ContinueStartedGame orig, Menu.SlugcatSelectMenu self, SlugcatStats.Name storyGameCharacter)
-    // {
-    //     orig(self, storyGameCharacter);
-    //     Logger.LogWarning("AAAAAAAAAAAAAAAAA orig_ContinueStartedGame ran so we ticked");
-    // }
-
-    // private void tickPositions(On.SaveState.orig_LoadGame orig, SaveState self, string str, RainWorldGame game)
-    // {
-    //     orig(self, str, game);
-    //     Logger.LogWarning("CCCCCCCCCCCCC loadgame ran so");
-    //     // SlugcatPath.CycleTick();
-    // }
-
-    // private void tickPositions(On.SaveState.orig_RainCycleTick orig, SaveState self, RainWorldGame game, bool depleteSwarmRoom)
-    // {
-    //     orig(self, game, depleteSwarmRoom);
-    //     Logger.LogInfo(" DDDDDDDDDDDDDDDDDDDD SaveState.orig_RainCycleTick kfapoekpek");    }
-
     private void notifyDestroyTextures(On.HUD.Map.orig_DestroyTextures orig, HUD.Map self)
     {
        orig(self);
-       Logger.LogWarning("DESTROY TEXTURES");
+       Logger.LogWarning("DESTROY MAP TEXTURES");
        path.SetNewMap(null);
     }
 
@@ -137,7 +98,7 @@ public partial class ModMainClass : BaseUnityPlugin
     private void addLinesToMapper(On.HUD.Map.orig_InitiateMapView orig, HUD.Map self)
     {
         orig(self);
-        if (debug) Logger.LogInfo("Initiating view!");
+        if (debug) Logger.LogInfo("Initiating map view!");
         path.appendNewLines();
     }
 
@@ -145,7 +106,7 @@ public partial class ModMainClass : BaseUnityPlugin
     {
         orig(self, timeStacker);
 
-        if (self.lastFade != self.fade || self.depth != self.lastDepth || (self.fade != 0 && self.panVel.magnitude >=0.01) || self.fade is not 0 or 1)
+        if (self.lastFade != self.fade || (self.depth != self.lastDepth && self.visible) || (self.fade != 0 && self.panVel.magnitude >=0.01) || self.fade > 0f && self.fade < 1f)
             path.UpdateLines(timeStacker);
     }
 
@@ -157,7 +118,7 @@ public partial class ModMainClass : BaseUnityPlugin
         if (!ModOptions.doRecordData.Value) return;
        
 
-        if (false && path.QueryMode() != SlugcatPath.MapMode.WRITEREAD) return;
+        // if (false && path.QueryMode() != SlugcatPath.MapMode.WRITEREAD) return;
         twoPerSecondPlease++;
         twoPerSecondPlease %= ModOptions.minTicksToRecordPoint.Value;
         if (twoPerSecondPlease != 0) return;
@@ -166,18 +127,6 @@ public partial class ModMainClass : BaseUnityPlugin
         path.addNewPosition(self.slugcatStats.name, new(self.MapOwnerRoom, self.MapOwnerInRoomPosition));
     }
 
-    private void createMapPather(On.HUD.Map.orig_Update orig, HUD.Map self)
-    {
-        orig(self);
-      
-
-      
-   
-
-
-    }
-
- 
 
     private void Awake()
     {

@@ -1,15 +1,12 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading;
-using System.Windows.Forms;
 using BepInEx.Logging;
-using HarmonyLib;
 using HUD;
-using IL.MoreSlugcats;
 using Menu;
 using RWCustom;
 using UnityEngine;
+using Random = System.Random;
 
 namespace PathTracer;
 
@@ -26,8 +23,13 @@ public class SlugcatPath
 
     public Map map = null;
 
+    internal static IEnumerable<SlugcatStats.Name> loadedSlugcars = [];
+
+    internal static bool tickIsRecent = false;
+
 
     public static int maxBackwardsRooms => ModOptions.maxRoomsToRememberPerRegion.Value;
+    private static Random _random = new Random();
 
     public string CurrentRegion
     {
@@ -38,7 +40,7 @@ public class SlugcatPath
             {
                 foreach (var kpv in slugcatRegionalPositions)
                 {
-                    (var slugcar, var positions) =( kpv.Key, kpv.Value);
+                    (var slugcar, var positions) = (kpv.Key, kpv.Value);
                     lastNRooms.ensureSlugcat(slugcar);
                     lastNRooms[slugcar] = positions.ensureRegion(value).Select((el) => el.roomNumber).Distinct().ToList();
                     Logger.LogInfo($"Updated current region, slugcar {slugcar} has {lastNRooms[slugcar].Count} records");
@@ -49,25 +51,26 @@ public class SlugcatPath
     }
 
 
-    public static void CycleTick()
+    public static void CycleTick(List<SlugcatStats.Name> names)
     {
 
-        Logger.LogInfo("Processing cycle tick !");
+        Logger.LogInfo($"Processing cycle tick for slugcats: {string.Join(", ", names)}");
 
-        var slugcats  = slugcatRegionalPositions.Keys.ToArray();
+        loadedSlugcars = names;
+        tickIsRecent = true;
 
 
-        foreach (var slugcat in slugcats)
+        foreach (var slugcat in slugcatRegionalPositions.Keys.ToArray().Intersect(loadedSlugcars))
         {
-            var regions = slugcatRegionalPositions[slugcat].Keys.ToArray();
+            var regions = slugcatRegionalPositions.ensureSlugcat(slugcat).Keys.ToArray();
             foreach (var reigon in regions)
             {
                 slugcatRegionalPositions[slugcat][reigon] = slugcatRegionalPositions[slugcat][reigon].Select(pos =>
                     {
-                        pos.lastSprite=null;
+                        pos.lastSprite = null;
                         pos.ageCycles++;
                         return pos;
-                    }).Where(pos => pos.ageCycles <= ModOptions.maxCyclesToRemember.Value).ToList();
+                    }).Where(pos => ModOptions.maxCyclesToRemember.Value == 0 || pos.ageCycles <= ModOptions.maxCyclesToRemember.Value).ToList();
 
             }
         }
@@ -101,7 +104,7 @@ public class SlugcatPath
     {
         m ??= map;
         if (m == null) return MapMode.NOTHING;
-        Logger.LogDebug($"QueryMode said owner is {m?.hud?.owner?.GetOwnerType()}");
+        Logger.LogDebug($"QueryMode said map owner is {m?.hud?.owner?.GetOwnerType()}");
         if (!(m.hud.owner is FastTravelScreen or KarmaLadderScreen or Player)) return MapMode.NOTHING;
         if (ModOptions.doRecordData.Value && m.hud.owner is Player) return MapMode.WRITEREAD;
         return MapMode.READONLY;
@@ -127,7 +130,7 @@ public class SlugcatPath
     {
         if (newMap == null)
         {
-            Logger.LogError("Tried to set new map but new map is null.");
+            Logger.LogInfo("Tried to set new map but new map is null. Did map get reset, or destroyed ?");
             return;
         }
 
@@ -148,10 +151,96 @@ public class SlugcatPath
     public void addNewPosition(SlugcatStats.Name slugcar, PositionEntry p)
     {
         if (map == null) return;
+        if (tickIsRecent)
+        {
+            tickIsRecent = false;
+            p.iCut = true;
+        }
+        if (!loadedSlugcars.Contains(slugcar))
+        {
+            Logger.LogError("WTF, new position for a non-active slugcar ??? " + slugcar);
+            Logger.LogError("For comparison, loaded slugcats are " + string.Join(", ", loadedSlugcars));
+        }
         var regionPositions = slugcatRegionalPositions.ensureSlugcat(slugcar).ensureRegion(CurrentRegion);
-        Logger.LogInfo($"Added {SlugcatPath.slugcatRegionalPositions.ensureSlugcat(slugcar).ensureRegion(CurrentRegion).LastOrDefault()} reg {CurrentRegion} sc {slugcar}");
-        
+
+
+        // culling (if it is what I think it means)
+        var a = SmartPositionsCuller(p, slugcar);
+        if (a)
+        {
+            if (regionPositions.Last()?.marked == false)
+            {
+                Logger.LogError("WTF, switched the line but not marked ?");
+            }
+        }
+
+        // end culling 
+
+
+        if (ModMainClass.debug) Logger.LogInfo($"Added {regionPositions.LastOrDefault()} reg {CurrentRegion} sc {slugcar} icut{p.iCut}");
+
+        ILimitMaximumRooms(slugcar, p, regionPositions);
+
+        if (lines.ensureSlugcat(slugcar).Count != 0 && lines[slugcar].First().alpha != 0)
+        {
+            appendLastLine();
+        }
+    }
+
+    private bool SmartPositionsCuller(PositionEntry p, SlugcatStats.Name slugcar)
+    {
+        var regionPositions = slugcatRegionalPositions[slugcar][CurrentRegion];
         regionPositions.Add(p);
+        if (regionPositions.Count >= 3)
+        {
+            var lastThreePositions = regionPositions.Skip(regionPositions.Count - 3).ToList();
+            if (lastThreePositions.Any((el) => el.iCut) || !lastThreePositions.Skip(1).All((el) => el.roomNumber == lastThreePositions[0].roomNumber)) return false;
+            var v1 = lastThreePositions[1].pos - lastThreePositions[0].pos;
+            var v2 = lastThreePositions[2].pos - lastThreePositions[1].pos;
+
+
+            // float r1 = (v1.x!=0 && v2.x!=0) ? v2.x/v1.x : 0;
+            // if (r1 <0.00001f || r1 * v1.y - v2.y < 0.00001f) {
+
+            float crossProduct = v1.x * v2.y - v1.y * v2.x;
+            if (Math.Abs(crossProduct) <  ModOptions.positionCullingPrecisionTimes1000.Value / 1000f) {
+
+                Logger.LogDebug($"Removing intermediate position {lastThreePositions[1].pos} between {lastThreePositions[0].pos} and {lastThreePositions[2].pos}");
+                if (lastThreePositions[1].lastSprite != null)
+                {
+                    // if (map != null)
+                    // {
+                    //     line.SetPosition(lastThreePositions[0].GetPos(map));
+                    //     line.scaleY = Custom.Dist(lastThreePositions[0].GetPos(map), lastThreePositions[2].GetPos(map));
+                    //     line.rotation = Custom.AimFromOneVectorToAnother(lastThreePositions[0].GetPos(map), lastThreePositions[2].GetPos(map));
+                    //     Logger.LogDebug("tranfered ownership of line");
+                    // }
+                    // else
+
+                    Logger.LogDebug("reased previous line");
+                    lastThreePositions[1].lastSprite.RemoveFromContainer();
+                    lines.ensureSlugcat(slugcar).Remove(lastThreePositions[1].lastSprite);
+
+                    // regionPositions.Last().lastSprite = line;
+                }
+                lastThreePositions[0].storedRealPos = null;
+                p.marked = true;
+                if (!regionPositions.Remove(lastThreePositions[1]))
+                {
+                    Logger.LogError("erm wtf we could not remove middle point from positions ??");
+                };
+                return true;
+            }
+            return false;
+
+        }
+        else return false;
+    }
+
+
+
+    private void ILimitMaximumRooms(SlugcatStats.Name slugcar, PositionEntry p, List<PositionEntry> regionPositions)
+    {
         if (lastNRooms.ensureSlugcat(slugcar).LastOrDefault() != p.roomNumber || !lastNRooms[slugcar].Contains(p.roomNumber))
         {
 
@@ -163,7 +252,7 @@ public class SlugcatPath
             Logger.LogInfo($"appended {p.roomNumber}");
         }
 
-        if (lastNRooms[slugcar].Count > maxBackwardsRooms)
+        if (lastNRooms[slugcar].Count > maxBackwardsRooms && maxBackwardsRooms!=0)
         {
             int roomToRemove = lastNRooms[slugcar][0];
             Logger.LogInfo("Will be removing entries from room " + roomToRemove);
@@ -175,7 +264,7 @@ public class SlugcatPath
                     trp.lastSprite.RemoveFromContainer();
                     trp.lastSprite = null;
                 }
-                Logger.LogInfo($"Removed point {trp}");
+                if (ModMainClass.debug) Logger.LogInfo($"Removed point {trp}");
                 regionPositions.Remove(trp);
             });
             if (regionPositions.Count > 0 && regionPositions[0].lastSprite != null) // avoid keeping lines that point to a non existant origin
@@ -186,15 +275,6 @@ public class SlugcatPath
             }
             lastNRooms[slugcar].Remove(roomToRemove);
         }
-        if (lines.ensureSlugcat(slugcar).Count != 0 && lines[slugcar].First().alpha != 0)
-        {
-            appendLastLine();
-        }
-    }
-
-    public void clearPositions()
-    {
-        slugcatRegionalPositions = new();
     }
 
     public void clearLines()
@@ -217,30 +297,44 @@ public class SlugcatPath
 
     }
 
+
+
+    /// <summary>
+    /// This is used for adding the last point, for whenever the map is already being shown
+    /// </summary>
     private void appendLastLine()
     {
         if (map == null) return;
         if (!ModOptions.doShowData.Value) return;
 
-        foreach (var kvp in slugcatRegionalPositions)
+        foreach (var slugcat in slugcatRegionalPositions.Keys.Intersect(loadedSlugcars))
         {
-            (var slugcat, var regPos) = (kvp.Key, kvp.Value);
-            Color slugColor = PlayerGraphics.SlugcatColor(slugcat);
+
+            var regPos = slugcatRegionalPositions[slugcat];
+            Color slugColor = (loadedSlugcars.Count() == 0) ? Color.red : PlayerGraphics.SlugcatColor(slugcat);
             var positions = regPos.ensureRegion(CurrentRegion);
 
             int resumePos = positions.Count;
             if (resumePos < 1) continue;
 
+            PositionEntry p = positions[resumePos - 1];
+            if (p.lastSprite != null) continue;
             PositionEntry lastP = positions[resumePos - 2];
             lastP.storedRealPos = null;
 
-            PositionEntry p = positions[resumePos - 1];
+            if (p.iCut)
+            {
+
+                if (ModMainClass.debug) Logger.LogInfo("Not drawing new line because iCut !");
+
+                continue;
+            }
 
             FSprite line = new FSprite("pixel")
             {
                 anchorY = 0F,
                 color = slugColor,
-                alpha = 0f,
+                alpha = map.fade,
                 scaleX = 2f,
             };
 
@@ -250,8 +344,9 @@ public class SlugcatPath
             line.rotation = Custom.AimFromOneVectorToAnother(lastP.GetPos(map), p.GetPos(map));
 
             lines.ensureSlugcat(slugcat).Add(line);
-            Logger.LogInfo($"Adding single line from {lastP.GetPos(map)} to {p.GetPos(map)} length {line.scaleY} rot {line.rotation} slug {slugcat} reg {CurrentRegion}");
+            if (ModMainClass.debug) Logger.LogInfo($"Adding (live) single line from {lastP.GetPos(map)} to {p.GetPos(map)} length {line.scaleY} rot {line.rotation} slug {slugcat} reg {CurrentRegion}");
             map.container.AddChild(line);
+            p.lastSprite = line;
 
 
 
@@ -263,12 +358,11 @@ public class SlugcatPath
         if (map == null) return;
         if (!ModOptions.doShowData.Value) return;
 
-        foreach (var kvp in slugcatRegionalPositions)
+        foreach (var slugcat in slugcatRegionalPositions.Keys.Intersect(loadedSlugcars))
         {
-            (var slugcat, var regPos) = (kvp.Key, kvp.Value);
-            Color slugColor = PlayerGraphics.SlugcatColor(slugcat);
+            var regPos = slugcatRegionalPositions[slugcat];
             var positions = regPos.ensureRegion(CurrentRegion);
-            int resumePos = positions.FindIndex((el) => el.lastSprite == null && positions.IndexOf(el) != 0);
+            int resumePos = positions.FindIndex((el) => el.lastSprite == null && positions.IndexOf(el) != 0 && el.iCut == false);
             if (resumePos == -1)
             {
                 Logger.LogInfo($"APPENDnEWlINE RESUMEpOS {slugcat} WAS -1 in {CurrentRegion}, no new lines to append");
@@ -282,12 +376,20 @@ public class SlugcatPath
             for (int i = resumePos; i < positions.Count; i++)
             {
                 PositionEntry p = positions[i];
+                Color slugColor = (loadedSlugcars.Count() == 0) ? Color.red : PlayerGraphics.SlugcatColor(slugcat);
+                if (p.iCut)
+                {
+                    if (ModMainClass.debug) Logger.LogInfo($"Not drawing this line between {lastP} and {p} because iCut !");
+                    lastP = p;
+
+                    continue;
+                }
 
                 FSprite line = new FSprite("pixel")
                 {
                     anchorY = 0F,
                     color = slugColor,
-                    alpha = 0f,
+                    alpha = map.fade,
                     scaleX = 2f,
                 };
 
@@ -296,7 +398,7 @@ public class SlugcatPath
                 line.rotation = Custom.AimFromOneVectorToAnother(lastP.GetPos(map), p.GetPos(map));
 
                 lines.ensureSlugcat(slugcat).Add(line);
-                // Logger.LogInfo($"Adding line from {lastP.GetPos(map)} to {p.GetPos(map)} length {line.scaleY} rot {line.rotation}");
+                if (ModMainClass.debug) Logger.LogInfo($"Adding line from {lastP.GetPos(map)} to {p.GetPos(map)} length {line.scaleY} rot {line.rotation}  rel {lastP.pos}; {p.pos}; maked?:{p.marked}");
                 map.container.AddChild(line);
                 p.lastSprite = line;
 
@@ -316,28 +418,39 @@ public class SlugcatPath
             if (ModMainClass.debug) Logger.LogInfo("WE ARE NOT PREPARED to update lines, no map");
             return;
         }
+        Logger.LogDebug($"Updating lines ! reasons {map.lastFade != map.fade} || {map.depth != map.lastDepth} || ({map.fade != 0} && {map.panVel.magnitude >= 0.01}) || {map.visible}");
         foreach (var kvp in slugcatRegionalPositions)
         {
-            (var key, var value) = (kvp.Key, kvp.Value);
-            if (lines.ensureSlugcat(key).Count == 0) continue; 
-            Color slugColor = PlayerGraphics.SlugcatColor(key);
+            if (/* (QueryMode() == MapMode.WRITEREAD) && */ !loadedSlugcars.Contains(kvp.Key)) continue; // do not show other slugcars' paths that are not playing if playing
+            (var slugcat, var regionalPositions) = (kvp.Key, kvp.Value);
+            if (lines.ensureSlugcat(slugcat).Count == 0) continue;
 
-            var positionsData = value.ensureRegion(CurrentRegion);
+            var positionsData = regionalPositions.ensureRegion(CurrentRegion);
 
             PositionEntry lastP = positionsData.FirstOrDefault();
             lastP.storedRealPos = null;
-            if (ModMainClass.debug) Logger.LogInfo($"Updating positions of {lines.Count} lines w/ alpha {map.fade} sc {key} reg {CurrentRegion}");
+            if (ModMainClass.debug) Logger.LogInfo($"Updating positions of {lines.ensureSlugcat(slugcat).Count} lines w/ alpha {map.fade} sc {slugcat} reg {CurrentRegion}");
 
-            for (int i = 0; i < positionsData.Count - 2; i++)
+            for (int i = 1; i < positionsData.Count; i++)
             {
-                PositionEntry p = positionsData[i + 1];
+                PositionEntry p = positionsData[i];
+                if (p.iCut)
+                {
+                    if (ModMainClass.debug) Logger.LogWarning($"Not updating a line between {lastP} and {p} because icut");
+                    p.storedRealPos = null;
+                    lastP = p;
+                    continue;
+
+                }
                 if (p.lastSprite == null)
                 {
 
-                    Logger.LogWarning("Not updating a line because it did not exisst.");
+                    if (ModMainClass.debug) Logger.LogWarning($"Not updating a line between {lastP} and {p} because NO SPRITE");
                     continue;
                 }
                 FSprite line = p.lastSprite;
+
+                // if (p.marked) line.color = Color.green;
 
                 p.storedRealPos = null;
                 line.SetPosition(lastP.GetPos(map));
@@ -348,9 +461,9 @@ public class SlugcatPath
                     alpha = Math.Max(map.Alpha(map.mapData.LayerOfRoom(p.roomNumber), 1, true), map.Alpha(map.mapData.LayerOfRoom(lastP.roomNumber), 1, true));
                 else alpha = map.Alpha(map.mapData.LayerOfRoom(p.roomNumber), 1, compensateForLayersInFront: true);
                 if (lastP.ageCycles != 0 && ModOptions.maxCyclesToRemember.Value != 0)
-                    alpha*=1.0f - (lastP.ageCycles / (ModOptions.maxCyclesToRemember.Value + 1.0f));
+                    alpha *= 1.0f - (lastP.ageCycles / (ModOptions.maxCyclesToRemember.Value + 1.0f));
                 line.alpha = alpha;
-                // Logger.LogInfo($"Moved line {lastP.GetPos(map)} to {p.GetPos(map)} length {line.scaleY} rot {line.rotation}");
+                if (p.marked) Logger.LogInfo($"Moved maked line {lastP.GetPos(map)} to {p.GetPos(map)} length {line.scaleY} rot {line.rotation} rel {lastP.pos} ; {p.pos}; col {line.color} aplha {line.alpha}");
 
                 lastP = p;
             }
@@ -372,6 +485,10 @@ public class SlugcatPath
         public FSprite lastSprite;
 
         public int ageCycles;
+
+        public bool iCut = false;
+
+        public bool marked = false;
 
 
         public PositionEntry(int roomNumber, Vector2 pos)
@@ -439,7 +556,7 @@ static class ExtensionsMethods
 
     public static Dictionary<string, List<SlugcatPath.PositionEntry>> ensureSlugcat(this Dictionary<SlugcatStats.Name, Dictionary<string, List<SlugcatPath.PositionEntry>>> dict, SlugcatStats.Name slugcat)
     {
-        if (!dict.ContainsKey(slugcat)) {dict.Add(slugcat, new()); Console.WriteLine("Added new slugcat in positions "+slugcat);}
+        if (!dict.ContainsKey(slugcat)) { dict.Add(slugcat, new()); Console.WriteLine("Added new slugcat in positions " + slugcat); }
         return dict[slugcat];
     }
 

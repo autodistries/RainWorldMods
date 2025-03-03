@@ -18,13 +18,16 @@ public class ModOptions : OptionInterface
     static public Configurable<bool> doWriteData;
     static public Configurable<bool> doRecordSlugpupData;
     static public Configurable<int> maxRoomsToRememberPerRegion;
-    static ConfigAcceptableRange<int> maxRoomsRange = new(2, 30);
+    static ConfigAcceptableRange<int> maxRoomsRange = new(0, 30);
     static public Configurable<int> maxCyclesToRemember;
     static ConfigAcceptableRange<int> maxCyclesRange = new(0, 6);
     static public Configurable<int> minTicksToRecordPoint;
     static ConfigAcceptableRange<int> minTicksRange = new(5, 80);
     static public Configurable<int> minDistanceToRecordPointTimes100;
     static ConfigAcceptableRange<int> minDistRange = new(1, 100);
+        static public Configurable<int> positionCullingPrecisionTimes1000;
+    static ConfigAcceptableRange<int> precisionRange = new(1, 1000);
+
 
 
     // button open file
@@ -59,7 +62,7 @@ public class ModOptions : OptionInterface
         maxCyclesToRemember = config.Bind("maxCyclesToRemember", 1, maxCyclesRange);
         minTicksToRecordPoint = config.Bind("minTicksToRecordPoint", 20, minTicksRange);
         minDistanceToRecordPointTimes100 = config.Bind("minDistanceToRecordPointTimes100", 8, minDistRange);
-        minDistanceToRecordPointTimes100.key = "what the fuck";
+        positionCullingPrecisionTimes1000 = config.Bind("positionCullingPrecisionTimes1000", 10, precisionRange);
         Logger.LogInfo("Configurables binded ");
     }
     public override void Initialize()
@@ -86,11 +89,6 @@ public class ModOptions : OptionInterface
             description = $"Show path data when any map is open"
         };
 
-        // var writeDataLabel = new OpLabel(43f, Decalage(), "Enable writing data on disk");
-        // var writeDataBox = new OpCheckBox(doWriteData, new Vector2(10f, Decalage(box: true, nextLine: true)))
-        // {
-        //     description = $"Recorded data will be stored on your hard drive.\nIf not, any recorded data will be forgotten on game restart."
-        // };
 
         // var singleCycleDataLabel = new OpLabel(43f, Decalage(), "Enable to record data for slugpups");
         // var singleCycleDataBox = new OpCheckBox(doRecordSlugpupData, new Vector2(10f, Decalage(box: true, nextLine: true)))
@@ -107,7 +105,7 @@ public class ModOptions : OptionInterface
         var maxRoomsPerRegionLabel = new OpLabel(10f, Decalage(), "Max rooms per region");
         var maxRoomsPerRegionSlider = new OpSlider(maxRoomsToRememberPerRegion, new Vector2(180f, Decalage(slider: true, nextLine: true)), 240)
         {
-            description = $"Maximum number of different rooms to keep data from, per region and per slugcat"
+            description = $"Maximum number of different rooms to keep data from, per region and per slugcat. 0 to not limit rooms"
         };
 
 
@@ -119,9 +117,15 @@ public class ModOptions : OptionInterface
         
 
         var minDistLabel = new OpLabel(10f, Decalage(), "Minimum distance per pos");
-        var minDistSlider = new OpSlider(minDistanceToRecordPointTimes100, new Vector2(180f, Decalage(slider: true, nextBtn: true)), 240)
+        var minDistSlider = new OpSlider(minDistanceToRecordPointTimes100, new Vector2(180f, Decalage(slider: true, nextLine: true)), 240)
         {
             description = $"Minimum distance required for saving a position. Actual value vill be /100",
+        };
+
+        var posPrecLabel = new OpLabel(10f, Decalage(), "Data culling");
+        var posPrecSlider = new OpSlider(positionCullingPrecisionTimes1000, new Vector2(180f, Decalage(slider: true, nextLine: true)), 240)
+        {
+            description = $"When going in a staight line, intermediate points are culled\nThis decides the precision of what is considered straight.\nDecrease only if you don't like the current result ! /1000",
         };
 
         // var openFileBtn = new OpSimpleButton(new(10f, Decalage(nextBtn:true)), new(120, 30), "Open folder") {
@@ -193,6 +197,9 @@ public class ModOptions : OptionInterface
 
             minDistLabel,
             minDistSlider,
+
+            posPrecLabel,
+            posPrecSlider,
 
             // openFileBtn,
             // deleteFileBtn,
