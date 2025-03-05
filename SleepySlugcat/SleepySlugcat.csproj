@@ -2,7 +2,7 @@
     <PropertyGroup>
         <PluginID>"nope.sleepyslugcat"</PluginID>
         <Product>"Sleepy Slugcat"</Product>
-        <Version>4.0.1</Version>
+        <Version>4.1.1</Version>
         <ModDesc>"Let the lil dude sleep ! With a supplement of Zzs&lt;LINE&gt;When you are in a calm place, take the time to sleep by holding down and relax.&lt;LINE&gt;Comes with a bunch of options for your Zs color, size and the contents of the Zzs.&lt;LINE&gt;&lt;LINE&gt;Make sure your slugcat feels safe and that they will not fall into a hole while sleeping !"</ModDesc>
         <TargetFramework>net48</TargetFramework>
         <LangVersion>12</LangVersion>
@@ -11,6 +11,8 @@
         <DebugSymbols>True</DebugSymbols>
         <RWDir>$(HOME)/.local/share/Steam/steamapps/common/Rain World/</RWDir>
         <NoWarn>0436</NoWarn>
+
+        <DefineConstants>DEBUGON</DefineConstants>
     </PropertyGroup>
     
     <ItemGroup>
@@ -44,6 +46,11 @@
             <Private>false</Private>
             <ExcludeAssets>all</ExcludeAssets>
         </Reference>
+                <Reference Include="$(RWDir)RainWorld_Data/Managed/UnityEngine.Input*.dll">
+            <Private>false</Private>
+            <ExcludeAssets>all</ExcludeAssets>
+        </Reference>
+
     </ItemGroup>
 
     <Target Name="PostBuild"
@@ -53,7 +60,7 @@
   {
     "id"%3A $(PluginID),
     "name"%3A $(Product),
-    "version"%3A $(Version),
+    "version"%3A "$(Version)",
     "authors"%3A "Nope",
     "description"%3A $(ModDesc),
     "requirements"%3A [],

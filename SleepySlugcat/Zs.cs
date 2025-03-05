@@ -9,25 +9,23 @@ namespace SleepySlugcat;
 
 public class Zs : CosmeticSprite
 {
-    public int parentPlayerId = 0;
-    public string rainbow = "";
-    public int age;
-    public float growthSpeed;
-    public float size;
     public Color color;
+    public string? rainbow = null;
+    private int age;
+    public float size;
     public float rotation;
     int facingTowards; // direction slugcat is pointing towards
     private Color originalColor; // used for individual rainbows
-    public static bool decayEnabled = false; // global state
+    public bool decayEnabled = true; // global state
 
     private bool decaying = false; // state of this Z
     static float timecounter = 0f;
-    public static string text = ":3";
+    public string text = ":3";
     static int lastsecond; // try not to get color jumps on pause/resume
     public static float baseSizeVar = 0.35f;
 
-    public static bool onlyZs = false;
-    public static bool musician = false;
+    public bool onlyZs => text.ToLower().All((letter) => letter == 'z');
+    public bool musician = false;
     Vector2 HQdxy = new();
 
     // based on public class LizardBubble : CosmeticSprite
@@ -195,7 +193,7 @@ public class Zs : CosmeticSprite
 
     private string translateSymbols(string c)
     {
-        if ((c[0] >= 65/*A*/ && c[0] <= 90 /*Z*/)) return c; //uppercase only. Damn you, windows
+        if (c[0] >= 65/*A*/ && c[0] <= 90 /*Z*/) return c; //uppercase only. Damn you, windows
         if ((c[0] >= 97 && c[0] <= 122)) return c + "tiny";
 
         return c[0] switch
@@ -264,10 +262,7 @@ public class Zs : CosmeticSprite
 
         }
 
-
         base.Update(eu);
     }
-
-
 
 }

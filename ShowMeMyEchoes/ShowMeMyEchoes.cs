@@ -32,7 +32,7 @@ public partial class ShowMeMyEchoes : BaseUnityPlugin
     internal static bool modSwitchOn = true;
     internal static bool showPrimedGhosts = true;
     internal static bool showNeverMetGhosts = true;
-    private OptionInterface options;
+    private ModOptions options;
     static readonly Color echoTokenColor = new(1, 0.86f, 0.54f, 1);
 
     public ShowMeMyEchoes()
@@ -78,7 +78,7 @@ public partial class ShowMeMyEchoes : BaseUnityPlugin
                 bool addIt = false;
                 Logger.LogInfo($"adding a token for {pair.Key.ToString()} (val {pair.Value})");
                 GhostID ghostID = GetGhostID(pair.Key.ToString().ToUpper());
-                if (pair.Value != 0 && false == SpawnGhost(ghostID, 9, 9, pair.Value, saveSlot == SlugcatStats.Name.Red))
+                if ((pair.Value != 0) && false == SpawnGhost(ghostID, 9, 9, pair.Value, saveSlot == SlugcatStats.Name.Red))
                 {
                     Logger.LogDebug($"This one has already been collected before !");
                     s = new FSprite("ctOn") { color = echoTokenColor };

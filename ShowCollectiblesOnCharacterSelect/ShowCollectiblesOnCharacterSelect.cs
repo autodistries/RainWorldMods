@@ -89,7 +89,7 @@ public partial class CollectiblesOnCharacterSelect : BaseUnityPlugin
     private async void autoUpdateTracker(Menu.SlugcatSelectMenu self)
     {
         var stopwatch = new Stopwatch();
-stopwatch.Start();
+        stopwatch.Start();
         await Task.Run(() =>
                 {
                     lock (_lock)

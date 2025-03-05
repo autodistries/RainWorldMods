@@ -31,9 +31,9 @@ public partial class ModsUpdater : BaseUnityPlugin
 {
 
     // The path of THIS mod
-    public static string THISMODPATH = Directory.GetParent(Path.GetFullPath(System.Reflection.Assembly.GetExecutingAssembly().Location)).Parent.FullName;
+    public static string THISMODPATH = Directory.GetParent(Path.GetFullPath(Assembly.GetExecutingAssembly().Location)).Parent.FullName;
     // The general mods path
-    public static string MODSPATH = Directory.GetParent(Path.GetFullPath(System.Reflection.Assembly.GetExecutingAssembly().Location)).Parent.Parent.FullName;
+    public static string ALLMODSPATH = Directory.GetParent(Path.GetFullPath(Assembly.GetExecutingAssembly().Location)).Parent.Parent.FullName;
 
     // static readonly List<ModHolder> ModObjects = new();
     static readonly Dictionary<string, ModHolder> ModObjects = new();
@@ -77,6 +77,7 @@ public partial class ModsUpdater : BaseUnityPlugin
     {
         orig(self, manager, showRegionSpecificBkg);
         On.Menu.MainMenu.ctor -= ActuallyhookVersionLabelChange; // unhook myself. This only needs to be ran once
+
         On.Menu.Remix.MenuModList.ModButton.GrafUpdate += verLabelColorChanger;
         On.Menu.Remix.MenuModList.ModButton.ctor += ModButtonStorer; // catches ModButtons in the list to get the version label, and modifies the labelver in accordance to statuses
         // On.Menu.Remix.MenuModList.Update += ButtonShower;
@@ -91,6 +92,16 @@ public partial class ModsUpdater : BaseUnityPlugin
         if (false) ParseAndQueryForeignModList(); // get other ServerMods
         matchLocalAndServerMods();
 
+
+
+        // testing
+        On.Menu.Remix.MenuModList.ModButton.UpdateColor += updateColorLogger;
+
+    }
+
+    private void updateColorLogger(On.Menu.Remix.MenuModList.ModButton.orig_UpdateColor orig, ModButton self)
+    {
+        orig(self);
     }
 
     private void DestroyGraphics(On.Menu.ModdingMenu.orig__SwitchToMainMenu orig, Menu.ModdingMenu self)
@@ -257,7 +268,7 @@ public partial class ModsUpdater : BaseUnityPlugin
         orig();
         if (ModObjects.Count == 0)
         {
-            base.Logger.LogInfo("Collecting mods after ModManager WrapInit");
+            base.Logger.LogInfo("Collecting mods after the first ever ModManager WrapInit");
             foreach (ModManager.Mod mod in ModManager.InstalledMods)
             {
                 var mo = new ModHolder(mod);
@@ -548,10 +559,10 @@ public partial class ModsUpdater : BaseUnityPlugin
 
         float startTime = Time.time;
         string url = "https://raw.githubusercontent.com/AndrewFM/RainDB/master/raindb.js";
-        string targetPath = Path.Combine(ModsUpdater.THISMODPATH, "raindb.js");
+        string targetPath = Path.Combine(THISMODPATH, "raindb.js");
 
         Utils.StatusCode result = await Utils.FileManager.IsRemoteFileNewer(url);
-        Logger.LogDebug(result);
+        Logger.LogDebug($"Checking for remote raindb.js: {result}");
 
         if (result is StatusCode.LocalFileNotFound or StatusCode.UpdateAvailable) {
             await FileManager.DownloadFileAsync(url, targetPath);

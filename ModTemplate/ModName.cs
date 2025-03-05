@@ -23,7 +23,7 @@ public partial class ModMainClass : BaseUnityPlugin
     {
     }
 
-    private void Awake()
+    private void OnEnabled()
     {
         if (done) return;
         Logger.LogInfo("Hello World !");

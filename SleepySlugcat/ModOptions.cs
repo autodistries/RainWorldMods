@@ -3,7 +3,7 @@ using UnityEngine;
 using static SleepySlugcat.Utils;
 
 namespace SleepySlugcat;
-public   class ModOptions : OptionInterface
+public class ModOptions : OptionInterface
 {
     SleepySlugcatto modInstance;
     bool init = false;
@@ -41,9 +41,8 @@ public   class ModOptions : OptionInterface
 
     internal Configurable<bool> ZsIsSlugcatMusicianOnConfigurable;
     OpCheckBox usableOpIsSlugcatMusicianCheckBox;
-
-
-
+    internal OpLabel previewLocation;
+    internal bool previewEnabled = true;
     private Menu.Remix.MixedUI.UIelement[] UIArrPlayerOptions;
 
     public float DecalageY(bool stay = false)
@@ -81,7 +80,7 @@ public   class ModOptions : OptionInterface
                 //     "slugcat" => ColorMode.SLUGCAT,
                 //     "custom" => ColorMode.CUSTOM,
 
-                    
+
                 //     default:
                 // };
                 ss.colorMode = ZsColorTypeConfigurable.Value;
@@ -230,6 +229,9 @@ public   class ModOptions : OptionInterface
         };
 
 
+        previewLocation = new OpLabel(decalagex, DecalageY(), "preview", false);
+
+
 
 
 
@@ -266,51 +268,19 @@ public   class ModOptions : OptionInterface
 
             qtyVarianceOpLabel,
             usableOpQtyVarianceSlider
-
-                   };
+           
+        };
 
         colorTypeUpdate(null, ZsColorTypeConfigurable.Value, "");
         isRainbowUpdate(null, ZsColorIsRainbowConfigurable.Value.ToString(), "");
 
 
-
-
-
-
-
         opTab.AddItems(UIArrPlayerOptions);
-        //  var methods = usableOpComboBox.GetType().GetMethods();
-        // foreach (MethodInfo mi in methods)
-        // {
-        //     OpSimpleButton testbtn = new OpSimpleButton(new Vector2(decalagex, DecalageY()), new Vector2(100f, 10f), mi.Name);
-        //     testbtn.OnClick += (arg) =>
-        //     {
-        //         try {
-        //         if (mi == null) { Debug.Log("null!"); return; }
-        //         //     usableOpListBox.GetType().GetMethod("_OpenList", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.pro).Invoke(usableOpListBox, null);
-        //         if (mi.GetParameters().Length == 0) Debug.Log(""+mi.Invoke(usableOpComboBox, null));
-        //         else
-        //         {
-        //             string s = "";
-        //             foreach (var param in mi.GetParameters())
-        //             {
-        //                 s += "--" + param.Name + ":" + param.GetType().Name;
-        //             }
 
-        //         } } catch (Exception e) {
-        //             Debug.Log("Nope !" +mi.Name + mi.GetMethodImplementationFlags() +e);
-        //         }
-        //     };
-
-        //     UIelement[] newUiElement = new UIelement[]{
-        //         testbtn
-        //     };
-
-
-        //     this.Tabs[0].AddItems(newUiElement);
-
-        // }
     }
+
+
+    
 
 
 }

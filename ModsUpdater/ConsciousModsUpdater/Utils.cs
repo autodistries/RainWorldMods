@@ -268,7 +268,7 @@ public static class Utils
             if (!url.EndsWith("zip")) return StatusCode.UpdateUrlNotZip;
             var targetModPath = new DirectoryInfo(modPath);
 
-            if (!(targetModPath.Parent.FullName == ModsUpdater.MODSPATH))
+            if (!(targetModPath.Parent.FullName == ModsUpdater.ALLMODSPATH))
             {
                 return StatusCode.InvalidTargetPath;
             }
