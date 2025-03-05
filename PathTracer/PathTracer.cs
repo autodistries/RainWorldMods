@@ -30,8 +30,9 @@ public partial class ModMainClass : BaseUnityPlugin
 
     internal static SlugcatPath path = new();
 
-    public static bool debug = true;
+    public static bool debug = false;
     private ModOptions options;
+    public static bool linesTest = false;
 
     public ModMainClass()
     {
@@ -108,6 +109,10 @@ public partial class ModMainClass : BaseUnityPlugin
 
         if (self.lastFade != self.fade || (self.depth != self.lastDepth && self.visible) || (self.fade != 0 && self.panVel.magnitude >=0.01) || self.fade > 0f && self.fade < 1f)
             path.UpdateLines(timeStacker);
+            if (Input.GetKeyDown("m")) {
+                linesTest = !linesTest;
+                Logger.LogDebug("switched lines test to current p "+!linesTest);
+            }
     }
 
     private void traceCurrentSlugcatPosition(On.Player.orig_Update orig, Player self, bool eu)
@@ -124,7 +129,8 @@ public partial class ModMainClass : BaseUnityPlugin
         if (twoPerSecondPlease != 0) return;
         path.CurrentRegion = self.room.world.region.name;
         if (SlugcatPath.slugcatRegionalPositions.TryGetValue(self.slugcatStats.name, out var regionalData) && regionalData.TryGetValue(self.room.world.region.name, out var positions) && positions.Count != 0 && (self.MapOwnerInRoomPosition - positions.LastOrDefault().pos).magnitude < ModOptions.minDistanceToRecordPointTimes100.Value/100.0f ) return;
-        path.addNewPosition(self.slugcatStats.name, new(self.MapOwnerRoom, self.MapOwnerInRoomPosition));
+        path.addNewPosition(self.slugcatStats.name, new(self.MapOwnerRoom, self.MapOwnerInRoomPosition, self.bodyChunks[1].vel.magnitude));
+        
     }
 
 

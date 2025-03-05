@@ -31,6 +31,8 @@ public class SlugcatPath
     public static int maxBackwardsRooms => ModOptions.maxRoomsToRememberPerRegion.Value;
     private static Random _random = new Random();
 
+    private Vector2 scaleCorrection = new Vector2(1,0);
+
     public string CurrentRegion
     {
         get => currentRegion;
@@ -108,6 +110,14 @@ public class SlugcatPath
         if (!(m.hud.owner is FastTravelScreen or KarmaLadderScreen or Player)) return MapMode.NOTHING;
         if (ModOptions.doRecordData.Value && m.hud.owner is Player) return MapMode.WRITEREAD;
         return MapMode.READONLY;
+    }
+
+    internal static Color SpeedInterpol(float f) {
+        // green slow (0)
+        // red fast (38)
+        float i = Custom.LerpMap(f,0,16,0,1);
+        Logger.LogInfo($"Speed from {f} to {i}");
+        return new Color(i, (1-i),0,1);
     }
 
 
@@ -393,7 +403,7 @@ public class SlugcatPath
                     scaleX = 2f,
                 };
 
-                line.SetPosition(lastP.GetPos(map));
+                line.SetPosition(lastP.GetPos(map) - scaleCorrection);
                 line.scaleY = Custom.Dist(lastP.GetPos(map), p.GetPos(map));
                 line.rotation = Custom.AimFromOneVectorToAnother(lastP.GetPos(map), p.GetPos(map));
 
@@ -401,6 +411,8 @@ public class SlugcatPath
                 if (ModMainClass.debug) Logger.LogInfo($"Adding line from {lastP.GetPos(map)} to {p.GetPos(map)} length {line.scaleY} rot {line.rotation}  rel {lastP.pos}; {p.pos}; maked?:{p.marked}");
                 map.container.AddChild(line);
                 p.lastSprite = line;
+                if (loadedSlugcars.Count() == 1 && p.ageCycles == 0 && ModOptions.doSpeedColorData.Value) line.color = lastP.speedColor;
+
 
                 lastP = p;
             }
@@ -453,7 +465,7 @@ public class SlugcatPath
                 // if (p.marked) line.color = Color.green;
 
                 p.storedRealPos = null;
-                line.SetPosition(lastP.GetPos(map));
+                line.SetPosition(lastP.GetPos(map)  - scaleCorrection);
                 line.scaleY = Custom.Dist(lastP.GetPos(map), p.GetPos(map));
                 line.rotation = Custom.AimFromOneVectorToAnother(lastP.GetPos(map), p.GetPos(map));
                 float alpha;
@@ -463,8 +475,7 @@ public class SlugcatPath
                 if (lastP.ageCycles != 0 && ModOptions.maxCyclesToRemember.Value != 0)
                     alpha *= 1.0f - (lastP.ageCycles / (ModOptions.maxCyclesToRemember.Value + 1.0f));
                 line.alpha = alpha;
-                if (p.marked) Logger.LogInfo($"Moved maked line {lastP.GetPos(map)} to {p.GetPos(map)} length {line.scaleY} rot {line.rotation} rel {lastP.pos} ; {p.pos}; col {line.color} aplha {line.alpha}");
-
+                // if (p.marked) Logger.LogInfo($"Moved maked line {lastP.GetPos(map)} to {p.GetPos(map)} length {line.scaleY} rot {line.rotation} rel {lastP.pos} ; {p.pos}; col {line.color} aplha {line.alpha}");
                 lastP = p;
             }
         }
@@ -479,7 +490,6 @@ public class SlugcatPath
     {
         public int roomNumber;
         public Vector2 pos;
-
         internal Vector2? storedRealPos = null;
 
         public FSprite lastSprite;
@@ -489,7 +499,7 @@ public class SlugcatPath
         public bool iCut = false;
 
         public bool marked = false;
-
+        public Color  speedColor;
 
         public PositionEntry(int roomNumber, Vector2 pos)
         {
@@ -498,7 +508,12 @@ public class SlugcatPath
             ageCycles = 0;
         }
 
-
+        public PositionEntry(int roomNumber, Vector2 pos, float magnitude) : this(roomNumber, pos)
+        {
+            // magnitude;
+            speedColor = SpeedInterpol(magnitude);
+            // Logger.LogInfo($"recorded speed : {magnitude}");
+        }
 
         public override string ToString()
         {
@@ -573,4 +588,28 @@ static class ExtensionsMethods
 
     }
 }
+
+
+/// <summary>
+/// Should the tracker follow slugpups ?
+/// </summary>
+public class SlugcatStatsKey
+{
+    public SlugcatStats.Name Name { get; set; }
+    public int PupID { get; set; }
+    public bool IsName { get; set; }
+
+    public SlugcatStatsKey(SlugcatStats.Name name)
+    {
+        Name = name;
+        IsName = true;
+    }
+
+    public SlugcatStatsKey(int id)
+    {
+        PupID = id;
+        IsName = false;
+    }
+}
+
 

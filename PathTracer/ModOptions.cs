@@ -16,6 +16,7 @@ public class ModOptions : OptionInterface
     static public Configurable<bool> doRecordData;
     static public Configurable<bool> doShowData;
     static public Configurable<bool> doWriteData;
+    static public Configurable<bool> doSpeedColorData;
     static public Configurable<bool> doRecordSlugpupData;
     static public Configurable<int> maxRoomsToRememberPerRegion;
     static ConfigAcceptableRange<int> maxRoomsRange = new(0, 30);
@@ -58,8 +59,9 @@ public class ModOptions : OptionInterface
         doShowData = config.Bind("doShowData", true);
         doWriteData = config.Bind("doWriteData", true);
         doRecordSlugpupData = config.Bind("doClearDataOnNewCycle", true);
+        doSpeedColorData = config.Bind("doSpeedColorData", true);
         maxRoomsToRememberPerRegion = config.Bind("maxRoomsToRememberPerRegion", 8, maxRoomsRange);
-        maxCyclesToRemember = config.Bind("maxCyclesToRemember", 1, maxCyclesRange);
+        maxCyclesToRemember = config.Bind("maxCyclesToRemember", 2, maxCyclesRange);
         minTicksToRecordPoint = config.Bind("minTicksToRecordPoint", 20, minTicksRange);
         minDistanceToRecordPointTimes100 = config.Bind("minDistanceToRecordPointTimes100", 8, minDistRange);
         positionCullingPrecisionTimes1000 = config.Bind("positionCullingPrecisionTimes1000", 10, precisionRange);
@@ -88,6 +90,14 @@ public class ModOptions : OptionInterface
         {
             description = $"Show path data when any map is open"
         };
+
+
+        var speedColorLabel = new OpLabel(43f, Decalage(), "Color path according to speed");
+        var speedColorBox = new OpCheckBox(doSpeedColorData, new Vector2(10f, Decalage(box: true, nextLine: true)))
+        {
+            description = $"When there is only one player, show the current cycle's path with a color gradient green (slow) -> red (fast)"
+        };
+
 
 
         // var singleCycleDataLabel = new OpLabel(43f, Decalage(), "Enable to record data for slugpups");
@@ -180,6 +190,9 @@ public class ModOptions : OptionInterface
 
             showDataLabel,
             showDataBox,
+
+            speedColorLabel,
+            speedColorBox,
 
             // writeDataLabel,
             // writeDataBox,
