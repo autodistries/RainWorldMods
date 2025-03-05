@@ -73,7 +73,7 @@
     "requirements_names"%3A [],
     "checksum_override_version"%3A true,
     "hide_version"%3A false,
-    "source"%3A "Source--
+    "source"%3A "Source--",
   }
         ]]></ModinfoGeneric>
         </PropertyGroup>
