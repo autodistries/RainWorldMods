@@ -1,9 +1,9 @@
 {
     "id": "nope.pathtracer",
     "name": "Path Tracer",
-    "version": "0.0.3",
+    "version": "0.0.8",
     "authors": "Nope",
-    "description": "A sample mod. Testing newlines like \n and also <LINE>these kind of line jump",
+    "description": "This mod is in beta ! Feel free to report any issues !\nTraces the path slugcat has followed during a game session. \nMore details on features at https://codeberg.org/catsoft/RainWorldMods/src/branch/main/PathTracer#readme",
     "requirements": [],
     "requirements_names": [],
     "checksum_override_version": true,

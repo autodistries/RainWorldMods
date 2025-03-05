@@ -31,7 +31,6 @@ public class SlugcatPath
     public static int maxBackwardsRooms => ModOptions.maxRoomsToRememberPerRegion.Value;
     private static Random _random = new Random();
 
-    private Vector2 scaleCorrection = new Vector2(1,0);
 
     public string CurrentRegion
     {
@@ -191,7 +190,7 @@ public class SlugcatPath
 
         ILimitMaximumRooms(slugcar, p, regionPositions);
 
-        if (lines.ensureSlugcat(slugcar).Count != 0 && lines[slugcar].First().alpha != 0)
+        if (lines.ensureSlugcat(slugcar).Count != 0 && map.visible)
         {
             appendLastLine();
         }
@@ -321,7 +320,7 @@ public class SlugcatPath
         {
 
             var regPos = slugcatRegionalPositions[slugcat];
-            Color slugColor = (loadedSlugcars.Count() == 0) ? Color.red : PlayerGraphics.SlugcatColor(slugcat);
+             
             var positions = regPos.ensureRegion(CurrentRegion);
 
             int resumePos = positions.Count;
@@ -332,6 +331,8 @@ public class SlugcatPath
             PositionEntry lastP = positions[resumePos - 2];
             lastP.storedRealPos = null;
 
+            
+
             if (p.iCut)
             {
 
@@ -340,12 +341,21 @@ public class SlugcatPath
                 continue;
             }
 
+            Color slugColor;
+            if (loadedSlugcars.Count() == 1 && p.ageCycles == 0 && ModOptions.doSpeedColorData.Value) slugColor = lastP.speedColor;
+            else
+            {
+                slugColor = (loadedSlugcars.Count() == 1  && ModOptions.doRedColor.Value) ? Color.red : PlayerGraphics.SlugcatColor(slugcat);
+                Logger.LogWarning($"Did not change line color. {loadedSlugcars.Count()} {p.ageCycles} {ModOptions.doSpeedColorData.Value} set color to {slugColor}");
+
+            }
+
             FSprite line = new FSprite("pixel")
             {
                 anchorY = 0F,
                 color = slugColor,
                 alpha = map.fade,
-                scaleX = 2f,
+                scaleX = ModOptions.lineWidth.Value,
             };
 
 
@@ -386,7 +396,14 @@ public class SlugcatPath
             for (int i = resumePos; i < positions.Count; i++)
             {
                 PositionEntry p = positions[i];
-                Color slugColor = (loadedSlugcars.Count() == 0) ? Color.red : PlayerGraphics.SlugcatColor(slugcat);
+                Color slugColor;
+                if (loadedSlugcars.Count() == 1 && p.ageCycles == 0 && ModOptions.doSpeedColorData.Value) slugColor = lastP.speedColor;
+                else
+                {
+                    slugColor = (loadedSlugcars.Count() == 1 && ModOptions.doRedColor.Value) ? Color.red : PlayerGraphics.SlugcatColor(slugcat);
+                    Logger.LogWarning($"Did not change line color. {loadedSlugcars.Count()} {p.ageCycles} {ModOptions.doSpeedColorData.Value} set color to {slugColor}");
+
+                }
                 if (p.iCut)
                 {
                     if (ModMainClass.debug) Logger.LogInfo($"Not drawing this line between {lastP} and {p} because iCut !");
@@ -400,18 +417,17 @@ public class SlugcatPath
                     anchorY = 0F,
                     color = slugColor,
                     alpha = map.fade,
-                    scaleX = 2f,
+                    scaleX = ModOptions.lineWidth.Value,
                 };
 
-                line.SetPosition(lastP.GetPos(map) - scaleCorrection);
+                line.SetPosition(lastP.GetPos(map));
                 line.scaleY = Custom.Dist(lastP.GetPos(map), p.GetPos(map));
                 line.rotation = Custom.AimFromOneVectorToAnother(lastP.GetPos(map), p.GetPos(map));
+                if (loadedSlugcars.Count() == 1 && p.ageCycles == 0 && ModOptions.doSpeedColorData.Value) line.color = lastP.speedColor;
 
                 lines.ensureSlugcat(slugcat).Add(line);
-                if (ModMainClass.debug) Logger.LogInfo($"Adding line from {lastP.GetPos(map)} to {p.GetPos(map)} length {line.scaleY} rot {line.rotation}  rel {lastP.pos}; {p.pos}; maked?:{p.marked}");
                 map.container.AddChild(line);
                 p.lastSprite = line;
-                if (loadedSlugcars.Count() == 1 && p.ageCycles == 0 && ModOptions.doSpeedColorData.Value) line.color = lastP.speedColor;
 
 
                 lastP = p;
@@ -465,7 +481,7 @@ public class SlugcatPath
                 // if (p.marked) line.color = Color.green;
 
                 p.storedRealPos = null;
-                line.SetPosition(lastP.GetPos(map)  - scaleCorrection);
+                line.SetPosition(lastP.GetPos(map));
                 line.scaleY = Custom.Dist(lastP.GetPos(map), p.GetPos(map));
                 line.rotation = Custom.AimFromOneVectorToAnother(lastP.GetPos(map), p.GetPos(map));
                 float alpha;
