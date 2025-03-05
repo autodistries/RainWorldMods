@@ -5,7 +5,7 @@
         Put whatever you want inside here : -->
         <PluginID>"nope.modsupdater"</PluginID>
         <Product>Mods Updater</Product>
-        <Version>0.0.10</Version>
+        <Version>0.0.11</Version>
 
         <TargetFramework>net48</TargetFramework>
         <LangVersion>11</LangVersion>
@@ -54,7 +54,7 @@
     "name"%3A "mod name",
     "version"%3A "mod version",
     "authors"%3A "Nope",
-    "description"%3A "Updates mods, probably",
+    "description"%3A "Updates mods. Uses RainDB as data source.\nIf it says Can't update, you have to go download and manually update. go to raindb.net and seatch for target mod.",
     "requirements"%3A [],
     "requirements_names"%3A [],
     "checksum_override_version"%3A true,

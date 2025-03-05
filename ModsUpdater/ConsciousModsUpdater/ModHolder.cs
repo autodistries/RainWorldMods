@@ -84,6 +84,7 @@ public partial class ModsUpdater
                 ModStatusTypes.Managed_By_Steam => Color.blue,
                 ModStatusTypes.Orphan => Color.grey,
                 ModStatusTypes.Has_A_Preloader_Cant_Update => Color.grey,
+                ModStatusTypes.Uses_Sync_Cant_Update => Color.grey,
                 _ => Color.white,
             };
         }
@@ -92,7 +93,7 @@ public partial class ModsUpdater
             if (VersionLabel is null) return false;
             UpdateColor();
             VersionLabel.color = color;
-            if ((status is ModStatusTypes.Updatable or ModStatusTypes.Has_A_Preloader_Cant_Update) && serverMod is not null)
+            if ((status is ModStatusTypes.Updatable or ModStatusTypes.Has_A_Preloader_Cant_Update or ModStatusTypes.Uses_Sync_Cant_Update) && serverMod is not null)
             {
                 VersionLabel.text = Mod.version + "->" + serverMod.Version;
                 return true;
@@ -171,9 +172,11 @@ public partial class ModsUpdater
             Dev, // mod is ahead with remote
             Latest, // mod is up-to-date with remote
             Updatable, // a remote update was found
+            Uses_Sync_Cant_Update, // the remote mod from raindbjs is too big so it was put on sync.com which has no api support
             Updated_Needs_Restart, //mod was updated this session
             Orphan, // no remote sources have picked up this mod
             Unknown, // no version info or bersionning disabled
             Managed_By_Steam,
-            Has_A_Preloader_Cant_Update
+            Has_A_Preloader_Cant_Update,
+            Built_in
         }

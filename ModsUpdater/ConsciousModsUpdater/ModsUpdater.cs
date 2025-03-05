@@ -73,7 +73,7 @@ public partial class ModsUpdater : BaseUnityPlugin
         done = true;
     }
 
-    private async void ActuallyhookVersionLabelChange(On.Menu.MainMenu.orig_ctor orig, Menu.MainMenu self, ProcessManager manager, bool showRegionSpecificBkg)
+    private void ActuallyhookVersionLabelChange(On.Menu.MainMenu.orig_ctor orig, Menu.MainMenu self, ProcessManager manager, bool showRegionSpecificBkg)
     {
         orig(self, manager, showRegionSpecificBkg);
         On.Menu.MainMenu.ctor -= ActuallyhookVersionLabelChange; // unhook myself. This only needs to be ran once
@@ -87,10 +87,9 @@ public partial class ModsUpdater : BaseUnityPlugin
         On.Menu.Remix.InternalOI_Stats._PreviewMod += ModPreviewHooker;
             On.Menu.ModdingMenu._SwitchToMainMenu += DestroyGraphics; 
 
-        initForeignUpdateCheckLog(); // gather cached data from local file for remote sources
-        await Task.Run(ParseAndQueryWorkshopModlist); // get workshop ServerMods
-        if (false) ParseAndQueryForeignModList(); // get other ServerMods
-        matchLocalAndServerMods();
+        // initForeignUpdateCheckLog(); // gather cached data from local file for remote sources
+        Task.Run(ParseAndQueryWorkshopModlist); // get workshop ServerMods
+        // if (false) ParseAndQueryForeignModList(); // get other ServerMods
 
 
 
@@ -153,7 +152,9 @@ public partial class ModsUpdater : BaseUnityPlugin
                 if (Utils.FileManager.AnyPatcherDlls(mo.Mod.path)) {
                     Logger.LogMessage($"{mo.Mod.name} had patcher dlls");
                     mo.Status = ModStatusTypes.Has_A_Preloader_Cant_Update;
-                } else 
+                } else if (mo.ServerMod.Link.Contains("sync.com")) {
+                    mo.Status = ModStatusTypes.Uses_Sync_Cant_Update;
+                } else
                 mo.Status = Utils.VersionManager.CompareVersions(mo.Mod.version, mo.ServerMod.Version) switch
                 {
                     Utils.StatusCode.AheadOfRemote => ModStatusTypes.Dev,
@@ -164,7 +165,9 @@ public partial class ModsUpdater : BaseUnityPlugin
             }
             else
             {
-                mo.Status = ModStatusTypes.Orphan;
+                Logger.LogDebug($"Orphan mod dump for {mo.ModID} : {GetLogFor(mo.Mod)}");
+                if (mo.Mod.id == MoreSlugcats.MoreSlugcats.MOD_ID || mo.Mod.id == MoreSlugcats.MMF.MOD_ID || mo.Mod.id == Expedition.Expedition.MOD_ID || mo.Mod.id == JollyCoop.JollyCoop.MOD_ID || mo.Mod.id == DevInterface.DevTools.MOD_ID) mo.Status = ModStatusTypes.Built_in;
+                else mo.Status = ModStatusTypes.Orphan;
             }
             mo.UpdateColor();
         }
@@ -230,7 +233,7 @@ public partial class ModsUpdater : BaseUnityPlugin
         Graphics.LblPreviewUpdateStatus!.text = "Status: " + currentObject.Status.ToString().Replace("_"," ");
         if (currentObject.Status is ModStatusTypes.Updatable or ModStatusTypes.Latest)
         {
-            Graphics.LblPreviewUpdateStatus!.text += " (Souce: " + currentObject.ServerMod!.Source + ")";
+            Graphics.LblPreviewUpdateStatus!.text += " (Source: " + currentObject.ServerMod!.Source + ")";
         }
         else if (currentObject.Status == ModStatusTypes.Updated_Needs_Restart)
         {
@@ -604,7 +607,7 @@ public partial class ModsUpdater : BaseUnityPlugin
             else if (line == "") continue;
             else if (line == "});")
             {
-                ServerMods.Add(new ServerMod(currentWorkingID, currentWorkingVersion, currentWorkingLink, ServerMod.ServerModType.Workshop));
+                ServerMods.Add(new ServerMod(currentWorkingID, currentWorkingVersion, currentWorkingLink, ServerMod.ServerModType.Workshop_RainDB));
             }
             else
             {
@@ -638,6 +641,8 @@ public partial class ModsUpdater : BaseUnityPlugin
         currentlyLoadingRainDB = false;
         doneReading = true;
 
+
+        matchLocalAndServerMods();
     }
 
 
@@ -722,7 +727,11 @@ public partial class ModsUpdater : BaseUnityPlugin
     }
     #endregion CachedForeignServerMods
 
-
+/// <summary>
+/// generates a list of proprtiy=value for an instance of an object
+/// </summary>
+/// <param name="target"></param>
+/// <returns></returns>
     public static string GetLogFor(object target)
     {
         var properties =
@@ -778,7 +787,7 @@ public class ServerMod
 
     public enum ServerModType
     {
-        Workshop,
+        Workshop_RainDB,
         Url,
         Unknown
     }

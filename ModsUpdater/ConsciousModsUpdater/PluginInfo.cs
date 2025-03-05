@@ -4,6 +4,6 @@ namespace ModsUpdater
     {
         public const string PLUGIN_GUID = "nope.modsupdater";
         public const string PLUGIN_NAME = "Mods Updater";
-        public const string PLUGIN_VERSION = "0.0.10";
+        public const string PLUGIN_VERSION = "0.0.11";
     }
 }

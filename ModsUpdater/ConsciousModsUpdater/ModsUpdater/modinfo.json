@@ -1,9 +1,9 @@
 {
     "id": "nope.modsupdater",
     "name": "Mods Updater",
-    "version": "0.0.10",
+    "version": "0.0.11",
     "authors": "Nope",
-    "description": "Updates mods, probably",
+    "description": "Updates mods. Uses RainDB as data source./nIf it says Can't update, you have to go download and manually update. go to raindb.net and seatch for target mod.",
     "requirements": [],
     "requirements_names": [],
     "checksum_override_version": true,
