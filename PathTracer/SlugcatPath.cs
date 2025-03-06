@@ -100,22 +100,22 @@ public class SlugcatPath
         NOTHING // to be interpreted as no read, no write on the map object
     }
 
-
-    internal MapMode QueryMode(Map m = null)
-    {
-        m ??= map;
-        if (m == null) return MapMode.NOTHING;
-        Logger.LogDebug($"QueryMode said map owner is {m?.hud?.owner?.GetOwnerType()}");
-        if (!(m.hud.owner is FastTravelScreen or KarmaLadderScreen or Player)) return MapMode.NOTHING;
-        if (ModOptions.doRecordData.Value && m.hud.owner is Player) return MapMode.WRITEREAD;
-        return MapMode.READONLY;
-    }
+    
+    // internal MapMode QueryMode(Map m = null)
+    // {
+    //     m ??= map;
+    //     if (m == null) return MapMode.NOTHING;
+    //     Logger.LogDebug($"QueryMode said map owner is {m?.hud?.owner?.GetOwnerType()}");
+    //     if (!(m.hud.owner is FastTravelScreen or KarmaLadderScreen or Player)) return MapMode.NOTHING;
+    //     if (ModOptions.doRecordData.Value && m.hud.owner is Player) return MapMode.WRITEREAD;
+    //     return MapMode.READONLY;
+    // }
 
     internal static Color SpeedInterpol(float f) {
         // green slow (0)
         // red fast (38)
         float i = Custom.LerpMap(f,0,16,0,1);
-        Logger.LogInfo($"Speed from {f} to {i}");
+        if (ModMainClass.debug) Logger.LogInfo($"Speed from {f} to {i}");
         return new Color(i, (1-i),0,1);
     }
 
@@ -148,7 +148,7 @@ public class SlugcatPath
         map = newMap;
 
         CurrentRegion = newMap.RegionName;
-        // Logger.LogInfo($"Loaded new map for sc {GetSlugcat()} in region {CurrentRegion}, {slugcatRegionalPositions.regionDataOrNew(CurrentRegion).Count} records, mode {QueryMode()}");
+         Logger.LogInfo($"Loaded new map");
 
     }
 
@@ -214,7 +214,7 @@ public class SlugcatPath
             float crossProduct = v1.x * v2.y - v1.y * v2.x;
             if (Math.Abs(crossProduct) <  ModOptions.positionCullingPrecisionTimes1000.Value / 1000f) {
 
-                Logger.LogDebug($"Removing intermediate position {lastThreePositions[1].pos} between {lastThreePositions[0].pos} and {lastThreePositions[2].pos}");
+                if (ModMainClass.debug) Logger.LogDebug($"Removing intermediate position {lastThreePositions[1].pos} between {lastThreePositions[0].pos} and {lastThreePositions[2].pos}");
                 if (lastThreePositions[1].lastSprite != null)
                 {
                     // if (map != null)
@@ -226,7 +226,7 @@ public class SlugcatPath
                     // }
                     // else
 
-                    Logger.LogDebug("reased previous line");
+                    if (ModMainClass.debug) Logger.LogDebug("reased previous line");
                     lastThreePositions[1].lastSprite.RemoveFromContainer();
                     lines.ensureSlugcat(slugcar).Remove(lastThreePositions[1].lastSprite);
 
@@ -255,7 +255,7 @@ public class SlugcatPath
 
             if (lastNRooms[slugcar].Remove(p.roomNumber))
             {
-                Logger.LogInfo($"Removed room {p.roomNumber} to readdit");
+                if (ModMainClass.debug) Logger.LogInfo($"Removed room {p.roomNumber} to readdit");
             };
             lastNRooms[slugcar].Add(p.roomNumber);
             Logger.LogInfo($"appended {p.roomNumber}");
@@ -346,7 +346,7 @@ public class SlugcatPath
             else
             {
                 slugColor = (loadedSlugcars.Count() == 1  && ModOptions.doRedColor.Value) ? Color.red : PlayerGraphics.SlugcatColor(slugcat);
-                Logger.LogWarning($"Did not change line color. {loadedSlugcars.Count()} {p.ageCycles} {ModOptions.doSpeedColorData.Value} set color to {slugColor}");
+                if (ModMainClass.debug) Logger.LogWarning($"Did not change line color. {loadedSlugcars.Count()} {p.ageCycles} {ModOptions.doSpeedColorData.Value} set color to {slugColor}");
 
             }
 
@@ -385,7 +385,7 @@ public class SlugcatPath
             int resumePos = positions.FindIndex((el) => el.lastSprite == null && positions.IndexOf(el) != 0 && el.iCut == false);
             if (resumePos == -1)
             {
-                Logger.LogInfo($"APPENDnEWlINE RESUMEpOS {slugcat} WAS -1 in {CurrentRegion}, no new lines to append");
+                if (ModMainClass.debug) Logger.LogInfo($"APPENDnEWlINE RESUMEpOS {slugcat} WAS -1 in {CurrentRegion}, no new lines to append");
                 continue;
             }
 
@@ -401,7 +401,7 @@ public class SlugcatPath
                 else
                 {
                     slugColor = (loadedSlugcars.Count() == 1 && ModOptions.doRedColor.Value) ? Color.red : PlayerGraphics.SlugcatColor(slugcat);
-                    Logger.LogWarning($"Did not change line color. {loadedSlugcars.Count()} {p.ageCycles} {ModOptions.doSpeedColorData.Value} set color to {slugColor}");
+                    if (ModMainClass.debug) Logger.LogWarning($"Did not change line color. {loadedSlugcars.Count()} {p.ageCycles} {ModOptions.doSpeedColorData.Value} set color to {slugColor}");
 
                 }
                 if (p.iCut)
@@ -446,7 +446,7 @@ public class SlugcatPath
             if (ModMainClass.debug) Logger.LogInfo("WE ARE NOT PREPARED to update lines, no map");
             return;
         }
-        Logger.LogDebug($"Updating lines ! reasons {map.lastFade != map.fade} || {map.depth != map.lastDepth} || ({map.fade != 0} && {map.panVel.magnitude >= 0.01}) || {map.visible}");
+        if (ModMainClass.debug) Logger.LogDebug($"Updating lines ! reasons {map.lastFade != map.fade} || {map.depth != map.lastDepth} || ({map.fade != 0} && {map.panVel.magnitude >= 0.01}) || {map.visible}");
         foreach (var kvp in slugcatRegionalPositions)
         {
             if (/* (QueryMode() == MapMode.WRITEREAD) && */ !loadedSlugcars.Contains(kvp.Key)) continue; // do not show other slugcars' paths that are not playing if playing
@@ -491,7 +491,7 @@ public class SlugcatPath
                 if (lastP.ageCycles != 0 && ModOptions.maxCyclesToRemember.Value != 0)
                     alpha *= 1.0f - (lastP.ageCycles / (ModOptions.maxCyclesToRemember.Value + 1.0f));
                 line.alpha = alpha;
-                // if (p.marked) Logger.LogInfo($"Moved maked line {lastP.GetPos(map)} to {p.GetPos(map)} length {line.scaleY} rot {line.rotation} rel {lastP.pos} ; {p.pos}; col {line.color} aplha {line.alpha}");
+                if (ModMainClass.debug && p.marked) Logger.LogInfo($"Moved maked line {lastP.GetPos(map)} to {p.GetPos(map)} length {line.scaleY} rot {line.rotation} rel {lastP.pos} ; {p.pos}; col {line.color} aplha {line.alpha}");
                 lastP = p;
             }
         }
@@ -549,19 +549,6 @@ public class SlugcatPath
         public string ToStringStore()
         {
             return $"{roomNumber}, {pos.x}, {pos.y}";
-        }
-
-        public override bool Equals(object obj)
-        {
-            if (obj is not PositionEntry pe) return false;
-            return pe.pos == this.pos && pe.roomNumber == this.roomNumber;
-        }
-
-        public override int GetHashCode()
-        {
-            int hashCode = -874986084;
-            hashCode = hashCode * -1521134295 + roomNumber.GetHashCode() + pos.GetHashCode();
-            return hashCode;
         }
     }
 

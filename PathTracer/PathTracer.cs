@@ -30,9 +30,8 @@ public partial class ModMainClass : BaseUnityPlugin
 
     internal static SlugcatPath path = new();
 
-    public static bool debug = false;
+    public static bool debug = true;
     private ModOptions options;
-    public static bool linesTest = false;
 
     public ModMainClass()
     {
@@ -64,7 +63,7 @@ public partial class ModMainClass : BaseUnityPlugin
     private void aledjemeurs(On.RainWorldGame.orig_ctor orig, RainWorldGame self, ProcessManager manager)
     {
        orig(self, manager);
-        Logger.LogInfo($"NEW RainWorldGame AAAAAAAAAAAAAAAAAAAAAAAA IsStorySession:{self.IsStorySession} safari:{self.rainWorld.safariMode} arena:{self.IsArenaSession}");
+        if (ModMainClass.debug) Logger.LogInfo($"NEW RainWorldGame AAAAAAAAAAAAAAAAAAAAAAAA IsStorySession:{self.IsStorySession} safari:{self.rainWorld.safariMode} arena:{self.IsArenaSession}");
 
        if (self.IsStorySession  && !self.rainWorld.safariMode && !self.IsArenaSession) {
         List<SlugcatStats.Name> names = new();
@@ -74,7 +73,7 @@ public partial class ModMainClass : BaseUnityPlugin
                 else Logger.LogWarning("no realized player for creature "+ac);
                 
             });
-            Logger.LogInfo($"YEEHAWWWW ticking positions :3333333333333333333333333");
+          if (ModMainClass.debug)  Logger.LogInfo($"YEEHAWWWW ticking positions :3333333333333333333333333");
         SlugcatPath.CycleTick(names);
 
        }
@@ -84,7 +83,7 @@ public partial class ModMainClass : BaseUnityPlugin
     private void notifyDestroyTextures(On.HUD.Map.orig_DestroyTextures orig, HUD.Map self)
     {
        orig(self);
-       Logger.LogWarning("DESTROY MAP TEXTURES");
+       if (ModMainClass.debug) Logger.LogWarning("DESTROY MAP TEXTURES");
        path.SetNewMap(null);
     }
 
@@ -109,10 +108,6 @@ public partial class ModMainClass : BaseUnityPlugin
 
         if (self.lastFade != self.fade || (self.depth != self.lastDepth && self.visible) || (self.fade != 0 && self.panVel.magnitude >=0.01) || self.fade > 0f && self.fade < 1f)
             path.UpdateLines(timeStacker);
-            if (Input.GetKeyDown("m")) {
-                linesTest = !linesTest;
-                Logger.LogDebug("switched lines test to current p "+!linesTest);
-            }
     }
 
     private void traceCurrentSlugcatPosition(On.Player.orig_Update orig, Player self, bool eu)
@@ -137,10 +132,10 @@ public partial class ModMainClass : BaseUnityPlugin
     private void Awake()
     {
         if (done) return;
-        Logger.LogInfo("Awake.");
+        Logger.LogInfo("Awake");
         On.RainWorld.OnModsInit += RainWorldOnOnModsInitDetour;
         done = true;
-        Logger.LogInfo("Done with init !");
+        // Logger.LogInfo("Done with init !");
     }
 
 
