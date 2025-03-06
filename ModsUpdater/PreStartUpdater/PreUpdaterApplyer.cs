@@ -8,6 +8,10 @@ using MonoMod.ModInterop;
 using static System.Diagnostics.Trace;
 using static PreStartUpdater.FileManager;
 
+
+using UnityEngine;
+using UnityEngine.UI;
+
 namespace PreStartUpdater;
 
 
@@ -28,6 +32,11 @@ public static class PreStartUpdaterPatcher
 
     public static DirectoryInfo MODSFOLDER = Directory.GetParent(Path.GetFullPath(System.Reflection.Assembly.GetExecutingAssembly().Location)).Parent;
 
+
+
+    // UI
+    private static GameObject messagePanel;
+    private static Text messageText;
 
 
     public static void Finish() {

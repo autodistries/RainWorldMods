@@ -123,14 +123,12 @@ public static class FileManager
     private static bool IsModinfoTopLevel(string zipFilePath)
     {
 
-        using (var archive = ZipFile.OpenRead(zipFilePath))
+        using var archive = ZipFile.OpenRead(zipFilePath);
+        foreach (ZipArchiveEntry entry in archive.Entries)
         {
-            foreach (ZipArchiveEntry entry in archive.Entries)
+            if (entry.Name.Equals("modinfo.json", System.StringComparison.OrdinalIgnoreCase) && entry.FullName.Split('/').Length == 1) // Check if it's not a directory & not in a dir
             {
-                if (entry.Name.Equals("modinfo.json", System.StringComparison.OrdinalIgnoreCase) && entry.FullName.Split('/').Length == 1) // Check if it's not a directory & not in a dir
-                {
-                    return true;
-                }
+                return true;
             }
         }
 

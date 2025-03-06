@@ -11,12 +11,19 @@
   </PropertyGroup>
 
 
-   <ItemGroup>
+ <ItemGroup>
         <Reference Include="$(RWDir)/BepInEx/core/*">
         <HintPath>$(RWDir)/BepInEx/core/*.dll</HintPath>
         <Private>true</Private>
-
         </Reference>
+
+        <Reference Include="$(RWDir)/RainWorld_Data/Managed/UnityEngine*">
+        <HintPath>$(RWDir)/BepInEx/core/*.dll</HintPath>
+        <Private>false</Private>
+        </Reference>
+
+
+
         <Reference Include="./libs/*.dll">
         <Private>false</Private>
         </Reference>
