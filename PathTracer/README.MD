@@ -11,7 +11,7 @@ Shows the path taken by slugcat on the map.
 
 You can configure a bunch of things in the settings (**defaults**) :
 - Position collection can be **enabled** or disabled
-- Showing data on map can be **enabled**/disabled
+- Showing data on map can be **enabled**/disabled, and a Keybind to enable/disable that by pressing it when map is open (**T**)
 - Making color of the lines match player speed can be **enabled**/disabled
 - Making color line red if only one player is playing can be enabled/**disabled**
 - The width of lines drawn on map can be modified (**2.5f**)

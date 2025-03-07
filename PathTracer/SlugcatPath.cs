@@ -385,8 +385,10 @@ public class SlugcatPath
             int resumePos = positions.FindIndex((el) => el.lastSprite == null && positions.IndexOf(el) != 0 && el.iCut == false);
             if (resumePos == -1)
             {
-                if (ModMainClass.debug) Logger.LogInfo($"APPENDnEWlINE RESUMEpOS {slugcat} WAS -1 in {CurrentRegion}, no new lines to append");
+                Logger.LogInfo($"APPENDnEWlINE RESUMEpOS {slugcat} WAS -1 in {CurrentRegion}, no new lines to append");
                 continue;
+            } else {
+                Logger.LogInfo($"resumePos is {resumePos} out of {positions.Count}");
             }
 
             PositionEntry lastP = positions[resumePos - 1];
@@ -401,12 +403,12 @@ public class SlugcatPath
                 else
                 {
                     slugColor = (loadedSlugcars.Count() == 1 && ModOptions.doRedColor.Value) ? Color.red : PlayerGraphics.SlugcatColor(slugcat);
-                    if (ModMainClass.debug) Logger.LogWarning($"Did not change line color. {loadedSlugcars.Count()} {p.ageCycles} {ModOptions.doSpeedColorData.Value} set color to {slugColor}");
+                     Logger.LogWarning($"Did not change line color. {loadedSlugcars.Count()} {p.ageCycles} {ModOptions.doSpeedColorData.Value} set color to {slugColor}");
 
                 }
                 if (p.iCut)
                 {
-                    if (ModMainClass.debug) Logger.LogInfo($"Not drawing this line between {lastP} and {p} because iCut !");
+                     Logger.LogInfo($"Not drawing this line between {lastP} and {p} because iCut !");
                     lastP = p;
 
                     continue;

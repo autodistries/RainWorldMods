@@ -11,7 +11,6 @@ using System.Security;
 using System.Security.Permissions;
 using UnityEngine;
 #pragma warning disable CS0618 // SecurityAction.RequestMinimum is obsolete. However, this does not apply to the mod, which still needs it. Suppress the warning indicating that it is obsolete.
-[module: UnverifiableCode]
 [assembly: SecurityPermission(SecurityAction.RequestMinimum, SkipVerification = true)]
 #pragma warning restore CS0618
 
@@ -27,10 +26,12 @@ public partial class ModMainClass : BaseUnityPlugin
     bool done = false;
     private bool modEnabled = true;
     int twoPerSecondPlease = 0;
+    int manualSwitchDelay = 0;
+
 
     internal static SlugcatPath path = new();
 
-    public static bool debug = true;
+    public static bool debug = false;
     private ModOptions options;
 
     public ModMainClass()
@@ -42,10 +43,10 @@ public partial class ModMainClass : BaseUnityPlugin
         
         On.HUD.Map.InitiateMapView += addLinesToMapper; // this is triggered when the map is hidden and gets shown
 
-        On.HUD.Map.Draw += updateMapPather; // this is triggered all of the time a Map obj exists
+        On.HUD.Map.Draw += updateLinesWhenNeeded; // this is triggered all of the time a Map obj exists
         
         On.HUD.Map.ctor += updateMapObj;  
-        // On.HUD.Map.Update += updateMapObjAgain;  
+        On.HUD.Map.Update += dynamicShowUpdate;  
         On.HUD.Map.DestroyTextures += notifyDestroyTextures;
 
             On.RainWorldGame.ctor += aledjemeurs;
@@ -58,6 +59,32 @@ public partial class ModMainClass : BaseUnityPlugin
             Console.WriteLine("Ow, crash !" + ex);
         }
 
+    }
+
+    private void dynamicShowUpdate(On.HUD.Map.orig_Update orig, HUD.Map self)
+    {
+        orig(self);
+        if (manualSwitchDelay == 0)
+        {
+            if (Input.GetKey(ModOptions.toggleShowDataKeybind.Value))
+            {
+                if ((path.map?.visible) != true || ModOptions.doShowData.Value != false)
+                {
+                    ModOptions.doShowData.Value = false;
+                    path.clearLines();
+                }
+                else
+                {
+                    ModOptions.doShowData.Value = true;
+                    Logger.LogInfo("We're switching it on");
+                    path.appendNewLines();
+                    path.UpdateLines(1);
+                }
+                manualSwitchDelay = 20;
+                Logger.LogInfo("SWITCHED SHOWDATA TO " + ModOptions.doShowData.Value);
+            }
+        }
+        else if (manualSwitchDelay != 0) manualSwitchDelay--;
     }
 
     private void aledjemeurs(On.RainWorldGame.orig_ctor orig, RainWorldGame self, ProcessManager manager)
@@ -102,7 +129,7 @@ public partial class ModMainClass : BaseUnityPlugin
         path.appendNewLines();
     }
 
-    private void updateMapPather(On.HUD.Map.orig_Draw orig, HUD.Map self, float timeStacker)
+    private void updateLinesWhenNeeded(On.HUD.Map.orig_Draw orig, HUD.Map self, float timeStacker)
     {
         orig(self, timeStacker);
 

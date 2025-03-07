@@ -15,6 +15,9 @@ public class ModOptions : OptionInterface
     private readonly ManualLogSource Logger;
     static public Configurable<bool> doRecordData;
     static public Configurable<bool> doShowData;
+
+    public static Configurable<KeyCode> toggleShowDataKeybind;
+
     // static public Configurable<bool> doWriteData;
     static public Configurable<bool> doSpeedColorData;
     static public Configurable<bool> doRedColor;
@@ -62,7 +65,8 @@ public class ModOptions : OptionInterface
         Logger.LogInfo("Mod Options instanciated");
 
         doRecordData = config.Bind("doRecordData", true);
-        doShowData = config.Bind("doShowData", true);
+        doShowData = config.Bind("doShowData", true); 
+        toggleShowDataKeybind = config.Bind("toggleShowDataKeybind", KeyCode.T); 
         // doWriteData = config.Bind("doWriteData", true);
         // doRecordSlugpupData = config.Bind("doClearDataOnNewCycle", true);
         doSpeedColorData = config.Bind("doSpeedColorData", true);
@@ -74,6 +78,7 @@ public class ModOptions : OptionInterface
         minDistanceToRecordPointTimes100 = config.Bind("minDistanceToRecordPointTimes100", 8, minDistRange);
         positionCullingPrecisionTimes1000 = config.Bind("positionCullingPrecisionTimes1000", 1500, precisionRange);
         Logger.LogInfo("Configurables binded ");
+
     }
     public override void Initialize()
     {
@@ -94,9 +99,14 @@ public class ModOptions : OptionInterface
         };
 
         var showDataLabel = new OpLabel(43f, Decalage(), "Enable showing data on maps");
-        var showDataBox = new OpCheckBox(doShowData, new Vector2(10f, Decalage(box: true, nextLine: true)))
+        var showDataBox = new OpCheckBox(doShowData, new Vector2(10f, Decalage()))
         {
-            description = $"Show path data when any map is open"
+            description = $"Show path data when any map is open. Also linked to the keybind"
+        };
+
+        OpKeyBinder opKeyBinder = new OpKeyBinder(toggleShowDataKeybind, new Vector2(200, Decalage(box: true, nextLine: true)-4), new Vector2(20, 20))
+        {
+            description = "The keybind which will toggle showing data on map"
         };
 
 
@@ -209,6 +219,8 @@ public class ModOptions : OptionInterface
 
             showDataLabel,
             showDataBox,
+
+            opKeyBinder,
 
             speedColorLabel,
             speedColorBox,

@@ -5,6 +5,6 @@ namespace PathTracer
     {
         public const string PLUGIN_GUID = "nope.pathtracer";
         public const string PLUGIN_NAME = "Path Tracer";
-        public const string PLUGIN_VERSION = "0.0.9";
+        public const string PLUGIN_VERSION = "0.0.10";
     }
 }
