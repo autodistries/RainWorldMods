@@ -71,7 +71,7 @@ public class ModOptions : OptionInterface
 
         OpKeyBinder opKeyBinder = new OpKeyBinder(loadTrackerKeybind, new Vector2(140, 456), new Vector2(20, 20))
         {
-            description = "The keybind which will toggle auto-loading the Tracker when pressed "
+            description = "The keybind which will toggle auto-loading the Tracker when pressed."
         };
 
         UIelement[] UIArrPlayerOptions = new UIelement[]
