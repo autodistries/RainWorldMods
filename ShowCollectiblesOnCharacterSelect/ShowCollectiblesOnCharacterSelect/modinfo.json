@@ -1,9 +1,9 @@
 {
     "id": "nope.collectibles.on.char.select",
     "name": "Show Collectibles on Slugcat Select",
-    "version": "0.1.4",
+    "version": "0.1.6",
     "authors": "Nope",
-    "description": "This mod makes the tokens (or collectibles) appear on character select menu.<LINE>This is threaded and should not impact performance, but it can be switched on and off dynamically from the Remix page.<LINE>This mod requires Rain World Remix to be enabled.",
+    "description": "This mod makes the tokens (or collectibles) appear on character select menu.<LINE>This is threaded and should not impact performance, but it can be switched on and off dynamically from the Remix page and/or using a keybind.<LINE>This mod requires Rain World Remix to be enabled. It is compatible with ImprovedCollectiblesTracker",
     "requirements": ["rwremix"],
     "requirements_names": ["Rain World Remix"],
     "checksum_override_version": true,

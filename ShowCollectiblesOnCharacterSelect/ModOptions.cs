@@ -1,6 +1,7 @@
 using System;
 using BepInEx.Logging;
 using Menu.Remix.MixedUI;
+using Menu.Remix.MixedUI.ValueTypes;
 using UnityEngine;
 
 namespace ShowCollectiblesOnCharacterSelect;
@@ -9,7 +10,11 @@ public class ModOptions : OptionInterface
 {
     private readonly ManualLogSource Logger;
 
-    Configurable<bool> shouldLoadCollectiblesOnTheMenu;
+    public Configurable<bool> shouldLoadCollectiblesOnTheMenu;
+    public Configurable<bool> enableDynamicToggleLoading;
+    public Configurable<KeyCode> loadTrackerKeybind;
+
+
 
 
     public bool WasInitialized = false;
@@ -19,16 +24,10 @@ public class ModOptions : OptionInterface
         Logger.LogInfo("Mod Options instanciated");
 
         shouldLoadCollectiblesOnTheMenu = config.Bind("shouldLoadCollectiblesOnTheMenu", true);
-        try
-        {
-            Logger.LogInfo("Getting and setting current value to " + shouldLoadCollectiblesOnTheMenu.Value);
+        enableDynamicToggleLoading = config.Bind("enableDynamicToggleLoading", true);
+        loadTrackerKeybind = config.Bind("loadTrackerKeybind", KeyCode.T);
 
-            CollectiblesOnCharacterSelect.autoLoadItems = shouldLoadCollectiblesOnTheMenu.Value;
-        }
-        catch (Exception ex)
-        {
-            Logger.LogError("Owie !" + ex);
-        }
+
     }
     public override void Initialize()
     {
@@ -41,36 +40,73 @@ public class ModOptions : OptionInterface
             opTab
         };
 
-        var cb = new OpCheckBox(shouldLoadCollectiblesOnTheMenu, new Vector2(10f, 490f))  {
-                description = @$"If this is enabled, viewing any character on the selection screen will also load its collectibles in the top-right.{((CollectiblesOnCharacterSelect.lastLoadingTime != null) ? $"\nLast time, this threaded operation took {CollectiblesOnCharacterSelect.lastLoadingTime}ms." : "")}"
-            };
-        cb.OnValueChanged += applyModEnabledOrNot;
+
+        // 
+        var lastLoadingTImeLabel = new OpLabel(10, 400, $"{((CollectiblesOnCharacterSelect.lastLoadingTime != null) ? $"Last time, for {SlugcatStats.getSlugcatName(CollectiblesOnCharacterSelect.lastSlugcatLoaded)}, this threaded operation took {CollectiblesOnCharacterSelect.lastLoadingTime}ms." : "")}");
+
+        var cb = new OpCheckBox(shouldLoadCollectiblesOnTheMenu, new Vector2(10f, 490f))
+        {
+            description = @$"When this is enabled, viewing any character on the selection screen will also load its collectibles in the top-right."
+        };
+        var cb2 = new OpCheckBox(enableDynamicToggleLoading, new Vector2(10f, 460f))
+        {
+            description = @$"This enables or disables listening to the following keybind.\nPressing that key on the Slugcat Selection screen will toggle the upper checkbox."
+        };
+
+        // cb2.OnValueChanged += (e,newVal,oldVal) =>
+        // {
+        //     if (newVal == "true" && cb.GetValueBool() == true)
+        //     {
+        //         cb.SetValueBool(false);
+        //     }
+        // };
+        // cb.OnValueChanged += (e,newVal,oldVal) =>
+        // {
+        //     if (newVal == "true" && cb2.GetValueBool() == true)
+        //     {
+        //         cb2.SetValueBool(false);
+        //     }
+        // };
+
+
+        OpKeyBinder opKeyBinder = new OpKeyBinder(loadTrackerKeybind, new Vector2(140, 456), new Vector2(20, 20))
+        {
+            description = "The keybind which will toggle auto-loading the Tracker when pressed "
+        };
 
         UIelement[] UIArrPlayerOptions = new UIelement[]
         {
             new OpLabel(10f, 550f, "Show collectibles character select menu options", true),
             new OpLabel(43f, 492f, "Enable auto-loading collectibles"),
-            cb
+            cb,
+            cb2,
+            new OpLabel(43f, 462f, "Enable keybind"),
+            opKeyBinder,
+
+            lastLoadingTImeLabel
+
         };
 
+
+
+
         opTab.AddItems(UIArrPlayerOptions);
+
+
+        /*
+            float num2 = 20f;
+            float num3 = 550f;
+            OpKeyBinder opKeyBinder = new OpKeyBinder(configurable, new Vector2(num2, num3 - num), new Vector2(20, 20))
+            {
+                description = configurable.info.description
+            };
+            UIfocusable.MutualVerticalFocusableBind(opKeyBinder, opKeyBinder);
+            OpLabel opLabel2 = new OpLabel(new Vector2(40 + num2, num3 - num), new Vector2(170f, 36f), quickDesc, FLabelAlignment.Left, bigText: false)
+            {
+                description = opKeyBinder.description
+            };
+        */
     }
 
-    private void applyModEnabledOrNot(UIconfig config, string value, string oldValue)
-    {
-        Logger.LogInfo($"Value Changed : {oldValue}->{value}");
-        if (value.ToLower() == "true")
-        {
-            CollectiblesOnCharacterSelect.autoLoadItems = true;
-        }
-        else
-        {
-            CollectiblesOnCharacterSelect.autoLoadItems = false;
-        }
-    }
 
-    private void togglePreventSpearsHit()
-    {
-
-    }
 }
