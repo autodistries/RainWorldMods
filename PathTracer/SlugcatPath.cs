@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using BepInEx.Logging;
 using HUD;
 using Menu;
@@ -26,9 +27,10 @@ public class SlugcatPath
     internal static IEnumerable<SlugcatStats.Name> loadedSlugcars = [];
 
     internal static bool tickIsRecent = false;
+    internal static int regularOldPositionsReduction = 0;
 
 
-    public static int maxBackwardsRooms => ModOptions.maxRoomsToRememberPerRegion.Value;
+    public static int maxBackwardsRooms  = ModOptions.minQtyOfAccuratePositions.Value/45;
     private static Random _random = new Random();
 
 
@@ -173,22 +175,27 @@ public class SlugcatPath
         var regionPositions = slugcatRegionalPositions.ensureSlugcat(slugcar).ensureRegion(CurrentRegion);
 
 
-        // culling (if it is what I think it means)
-        var a = SmartPositionsCuller(p, slugcar);
-        if (a)
-        {
-            if (regionPositions.Last()?.marked == false)
-            {
-                Logger.LogError("WTF, switched the line but not marked ?");
-            }
-        }
-
+        // culling
+        LinearPositionsCuller(p, slugcar);
         // end culling 
 
 
-        if (ModMainClass.debug) Logger.LogInfo($"Added {regionPositions.LastOrDefault()} reg {CurrentRegion} sc {slugcar} icut{p.iCut}");
+        if (lastNRooms.ensureSlugcat(slugcar).LastOrDefault() != p.roomNumber) {
+            lastNRooms[slugcar].Add(p.roomNumber);
+            Logger.LogInfo($"appended {p.roomNumber}");
+        }
 
-        ILimitMaximumRooms(slugcar, p, regionPositions);
+        // ILimitMaximumRooms(slugcar, p, regionPositions);
+
+        // regularOldPositionsReduction++;
+        // regularOldPositionsReduction%=33;
+        // if (lastNRooms[slugcar].Count > maxBackwardsRooms) {
+            OldPositionsCuller(slugcar);
+        // }
+
+
+        if (ModMainClass.debug) Logger.LogInfo($"Added {regionPositions.LastOrDefault()} reg {CurrentRegion} sc {slugcar}");
+
 
         if (lines.ensureSlugcat(slugcar).Count != 0 && map.visible)
         {
@@ -196,7 +203,76 @@ public class SlugcatPath
         }
     }
 
-    private bool SmartPositionsCuller(PositionEntry p, SlugcatStats.Name slugcar)
+
+    /// <summary>
+    /// if there are more than n lines for this slugcat ,
+    /// reduce the qty of points in each far away room
+    /// </summary>
+    /// <param name="slugcar"></param>
+    public void OldPositionsCuller(SlugcatStats.Name slugcar, bool force = false)
+    {
+        if (force || lastNRooms[slugcar].Count > maxBackwardsRooms)
+        {
+            List<PositionEntry> positionEntries = slugcatRegionalPositions[slugcar][CurrentRegion];
+            Logger.LogInfo($"PROCESSING WITH CULLING!!!!! Before culling, {positionEntries.Count}. Rooms:{lastNRooms[slugcar].Count}>{maxBackwardsRooms} min rooms {ModOptions.minQtyOfAccuratePositions.Value}");
+            // The oldest the points, the less reluctant we should be to trimming data
+            // run through the list of positions. 
+            // For each set of points in a room, remove a proportion of them (based on what ?)
+            // minimum qty of points to keep in a room : say 10 min
+            lastNRooms[slugcar].Clear();
+            int resumeIndex = 0;
+            bool anyModif = false;
+            while (resumeIndex < positionEntries.Count)
+            {
+                Logger.LogInfo($"StartIndex is {resumeIndex}");
+                var startslice = positionEntries.Skip(resumeIndex);
+                var operateSlice = startslice.TakeWhile((el) => el.roomNumber == startslice.First().roomNumber && el.ageCycles == startslice.First().ageCycles);
+                if (positionEntries.IndexOf(operateSlice.Last()) > positionEntries.Count - ModOptions.minQtyOfAccuratePositions.Value) {
+                    Logger.LogInfo($"OldCuller exited because it wants at least {ModOptions.minQtyOfAccuratePositions.Value} intact pos, culling would have {resumeIndex}-{positionEntries.IndexOf(operateSlice.Last())}");
+                    break;
+                }
+
+                Logger.LogInfo($"slice age:{operateSlice.First().ageCycles} room {operateSlice.First().roomNumber} qty {operateSlice.Count()} btw {positionEntries.IndexOf(operateSlice.First())} and {positionEntries.IndexOf(operateSlice.Last())} \n f,l entries:\n{operateSlice.First()}\n{operateSlice.Last()}");
+                if (operateSlice.Count() <= 10)
+                {
+                    resumeIndex = positionEntries.IndexOf(operateSlice.Last()) +1;
+                    Logger.LogInfo($"Continuing from {resumeIndex} because not enough entries in this room");
+                    continue;
+                }
+                if (!anyModif)
+                {
+                    clearLines();
+                    anyModif = true;
+                }
+                List<PositionEntry> newSlice = [operateSlice.First()];
+                // linar rep of 6 points on count-2 indexes
+                int increment = operateSlice.Count() / 6;
+                Logger.LogInfo($"Increment: {increment}");
+                for (int i = 1; i < operateSlice.Count(); i += increment)
+                {
+                    newSlice.Add(operateSlice.ElementAt(i));
+                }
+                if (newSlice.Last().pos != operateSlice.Last().pos) newSlice.Add(operateSlice.Last());
+                Logger.LogInfo($"----------------\nnew contents:\n{newSlice.First()} \n{newSlice.Last()}\n-------------");
+
+                positionEntries.RemoveRange(resumeIndex, operateSlice.Count());
+                positionEntries.InsertRange(resumeIndex, newSlice);
+                resumeIndex = positionEntries.IndexOf(newSlice.Last()) + 1;
+                Logger.LogInfo($"after modif, resumeIndex became {resumeIndex} and the new ones are btw {positionEntries.IndexOf(newSlice.First())} and {positionEntries.IndexOf(newSlice.Last())}");
+            }
+            Logger.LogInfo($"After culling, {positionEntries.Count}");
+        }
+
+    }
+
+
+    /// <summary>
+    /// If the latestst, yet unadded position seems linear with the two previous points, removes the middle point
+    /// </summary>
+    /// <param name="p"></param>
+    /// <param name="slugcar"></param>
+    /// <returns></returns>
+    private bool LinearPositionsCuller(PositionEntry p, SlugcatStats.Name slugcar)
     {
         var regionPositions = slugcatRegionalPositions[slugcar][CurrentRegion];
         regionPositions.Add(p);
@@ -253,37 +329,37 @@ public class SlugcatPath
         if (lastNRooms.ensureSlugcat(slugcar).LastOrDefault() != p.roomNumber || !lastNRooms[slugcar].Contains(p.roomNumber))
         {
 
-            if (lastNRooms[slugcar].Remove(p.roomNumber))
-            {
-                if (ModMainClass.debug) Logger.LogInfo($"Removed room {p.roomNumber} to readdit");
-            };
-            lastNRooms[slugcar].Add(p.roomNumber);
-            Logger.LogInfo($"appended {p.roomNumber}");
+            // if (lastNRooms[slugcar].Remove(p.roomNumber))
+            // {
+            //     if (ModMainClass.debug) Logger.LogInfo($"Removed room {p.roomNumber} to readdit");
+            // };
+            // lastNRooms[slugcar].Add(p.roomNumber);
+            // Logger.LogInfo($"appended {p.roomNumber}");
         }
 
-        if (lastNRooms[slugcar].Count > maxBackwardsRooms && maxBackwardsRooms!=0)
-        {
-            int roomToRemove = lastNRooms[slugcar][0];
-            Logger.LogInfo("Will be removing entries from room " + roomToRemove);
-            regionPositions.FindAll((el) => el.roomNumber == roomToRemove).ForEach((trp) =>
-            {
-                if (trp.lastSprite != null)
-                {
-                    lines[slugcar].Remove(trp.lastSprite);
-                    trp.lastSprite.RemoveFromContainer();
-                    trp.lastSprite = null;
-                }
-                if (ModMainClass.debug) Logger.LogInfo($"Removed point {trp}");
-                regionPositions.Remove(trp);
-            });
-            if (regionPositions.Count > 0 && regionPositions[0].lastSprite != null) // avoid keeping lines that point to a non existant origin
-            {
-                lines.ensureSlugcat(slugcar).Remove(regionPositions[0].lastSprite);
-                regionPositions[0].lastSprite.RemoveFromContainer();
-                regionPositions[0].lastSprite = null;
-            }
-            lastNRooms[slugcar].Remove(roomToRemove);
-        }
+        // if (lastNRooms[slugcar].Count > maxBackwardsRooms && maxBackwardsRooms!=0)
+        // {
+        //     int roomToRemove = lastNRooms[slugcar][0];
+        //     Logger.LogInfo("Will be removing entries from room " + roomToRemove);
+        //     regionPositions.FindAll((el) => el.roomNumber == roomToRemove).ForEach((trp) =>
+        //     {
+        //         if (trp.lastSprite != null)
+        //         {
+        //             lines[slugcar].Remove(trp.lastSprite);
+        //             trp.lastSprite.RemoveFromContainer();
+        //             trp.lastSprite = null;
+        //         }
+        //         if (ModMainClass.debug) Logger.LogInfo($"Removed point {trp}");
+        //         regionPositions.Remove(trp);
+        //     });
+        //     if (regionPositions.Count > 0 && regionPositions[0].lastSprite != null) // avoid keeping lines that point to a non existant origin
+        //     {
+        //         lines.ensureSlugcat(slugcar).Remove(regionPositions[0].lastSprite);
+        //         regionPositions[0].lastSprite.RemoveFromContainer();
+        //         regionPositions[0].lastSprite = null;
+        //     }
+        //     lastNRooms[slugcar].Remove(roomToRemove);
+        // }
     }
 
     public void clearLines()
@@ -303,9 +379,7 @@ public class SlugcatPath
         lines.Clear();
 
         Logger.LogInfo("Cleared lines");
-
     }
-
 
 
     /// <summary>
@@ -501,8 +575,23 @@ public class SlugcatPath
 
     }
 
-
-
+    internal void debuginfo()
+    {
+        StringBuilder r = new();
+        r.AppendLine($"Slugcars in keys:{slugcatRegionalPositions.Keys.Count} ({string.Join(", ",slugcatRegionalPositions.Keys)})");
+        r.AppendLine($"Slugcars in loadedSlugcars:{loadedSlugcars.Count()} ({string.Join(", ", loadedSlugcars)})");
+        foreach (var slugcat in slugcatRegionalPositions.Keys.ToArray().Intersect(loadedSlugcars))
+        {
+            r.AppendLine("  slugcar "+slugcat);
+            var regions = slugcatRegionalPositions.ensureSlugcat(slugcat).Keys.ToArray();
+            foreach (var reigon in regions)
+            {
+                r.Append($"{reigon}:{slugcatRegionalPositions[slugcat][reigon].Count}:{slugcatRegionalPositions[slugcat][reigon].Count((el) => el.lastSprite != null)}, ");
+            }
+            r.AppendLine();
+        }
+        Logger.LogDebug(r);
+    }
 
     public class PositionEntry
     {
@@ -535,7 +624,7 @@ public class SlugcatPath
 
         public override string ToString()
         {
-            return $"position {pos} in room {roomNumber}";
+            return $"pos {pos} @{roomNumber}{(iCut ? " (CUT)" : "")}";
         }
 
 

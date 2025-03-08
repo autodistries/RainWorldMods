@@ -85,6 +85,15 @@ public partial class ModMainClass : BaseUnityPlugin
             }
         }
         else if (manualSwitchDelay != 0) manualSwitchDelay--;
+
+
+        if (Input.GetKeyDown(KeyCode.M)) {
+            path.debuginfo();
+        }
+
+        if (Input.GetKeyDown(KeyCode.C)) {
+            path.OldPositionsCuller(SlugcatStats.Name.White, true);
+        }
     }
 
     private void aledjemeurs(On.RainWorldGame.orig_ctor orig, RainWorldGame self, ProcessManager manager)

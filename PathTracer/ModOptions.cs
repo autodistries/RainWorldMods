@@ -22,11 +22,11 @@ public class ModOptions : OptionInterface
     static public Configurable<bool> doSpeedColorData;
     static public Configurable<bool> doRedColor;
     // static public Configurable<bool> doRecordSlugpupData;
-    static public Configurable<int> maxRoomsToRememberPerRegion;
+    // static public Configurable<int> maxRoomsToRememberPerRegion;
+    // static ConfigAcceptableRange<int> maxRoomsRange = new(0, 30);
     static ConfigAcceptableRange<float> lineWidthRange = new(0.5f, 3.5f);
     static public Configurable<float> lineWidth;
 
-    static ConfigAcceptableRange<int> maxRoomsRange = new(0, 30);
     static public Configurable<int> maxCyclesToRemember;
     static ConfigAcceptableRange<int> maxCyclesRange = new(0, 6);
     static public Configurable<int> minTicksToRecordPoint;
@@ -35,6 +35,9 @@ public class ModOptions : OptionInterface
     static ConfigAcceptableRange<int> minDistRange = new(1, 100);
     static public Configurable<int> positionCullingPrecisionTimes1000;
     static ConfigAcceptableRange<int> precisionRange = new(1, 2000);
+
+        static public Configurable<int> minQtyOfAccuratePositions;
+    static ConfigAcceptableRange<int> qtyPosRange = new(10, 2000);
 
 
 
@@ -72,11 +75,12 @@ public class ModOptions : OptionInterface
         doSpeedColorData = config.Bind("doSpeedColorData", true);
         doRedColor = config.Bind("doRedColor", false);
         lineWidth = config.Bind("lineWidth", 2f, lineWidthRange);
-        maxRoomsToRememberPerRegion = config.Bind("maxRoomsToRememberPerRegion", 8, maxRoomsRange);
+        // maxRoomsToRememberPerRegion = config.Bind("maxRoomsToRememberPerRegion", 8, maxRoomsRange);
         maxCyclesToRemember = config.Bind("maxCyclesToRemember", 2, maxCyclesRange);
         minTicksToRecordPoint = config.Bind("minTicksToRecordPoint", 20, minTicksRange);
         minDistanceToRecordPointTimes100 = config.Bind("minDistanceToRecordPointTimes100", 8, minDistRange);
         positionCullingPrecisionTimes1000 = config.Bind("positionCullingPrecisionTimes1000", 1500, precisionRange);
+        minQtyOfAccuratePositions  = config.Bind("minQtyOfAccuratePositions", 250, qtyPosRange);
         Logger.LogInfo("Configurables binded ");
 
     }
@@ -128,6 +132,15 @@ public class ModOptions : OptionInterface
         //     description = $"Also record data of your slugpups"
         // };
 
+        
+        var posQtyLabel = new OpLabel(10f, Decalage(), "Minimum accurate positions");
+        var posQtySlider = new OpSlider(minQtyOfAccuratePositions, new Vector2(180f, Decalage(slider: true, nextLine: true)), 240)
+        {
+            description = $"Minimum quantity of recent positions that won't ever be culled",
+        };
+
+
+
         var lineWidthLabel = new OpLabel(10f, Decalage(), "Line width");
         var lineWidthSlider = new OpFloatSlider(lineWidth, new Vector2(180f, Decalage(slider: true, nextLine: true)), 240)
         {
@@ -141,11 +154,11 @@ public class ModOptions : OptionInterface
             description = $"Maximum number of cycles positions will be remembered. 0 means clear on new cycle. Their opacity will be reduced over time"
         };
 
-        var maxRoomsPerRegionLabel = new OpLabel(10f, Decalage(), "Max rooms per region");
-        var maxRoomsPerRegionSlider = new OpSlider(maxRoomsToRememberPerRegion, new Vector2(180f, Decalage(slider: true, nextLine: true)), 240)
-        {
-            description = $"Maximum number of different rooms to keep data from, per region and per slugcat. 0 to not limit rooms"
-        };
+        // var maxRoomsPerRegionLabel = new OpLabel(10f, Decalage(), "Max rooms per region");
+        // var maxRoomsPerRegionSlider = new OpSlider(maxRoomsToRememberPerRegion, new Vector2(180f, Decalage(slider: true, nextLine: true)), 240)
+        // {
+        //     description = $"Maximum number of different rooms to keep data from, per region and per slugcat. 0 to not limit rooms"
+        // };
 
 
         var minTicksLabel = new OpLabel(10f, Decalage(), "Minimum ticks per pos");
@@ -236,8 +249,10 @@ public class ModOptions : OptionInterface
             maxCyclesToRememberLabel,
             maxCyclesToRememberSlider,
 
-            maxRoomsPerRegionLabel,
-            maxRoomsPerRegionSlider,
+            // maxRoomsPerRegionLabel,
+            // maxRoomsPerRegionSlider,
+            posQtyLabel,
+posQtySlider,
 
 
             // singleCycleDataLabel,
