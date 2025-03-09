@@ -30,7 +30,7 @@ public class SlugcatPath
     internal static int regularOldPositionsReduction = 0;
 
 
-    public static int maxBackwardsRooms  = ModOptions.minQtyOfAccuratePositions.Value/45;
+    public static int MaxBackwardsRooms  => Mathf.Clamp((ModOptions.minQtyOfAccuratePositions?.Value ?? 450)/90, 1,15);
     private static Random _random = new Random();
 
 
@@ -182,7 +182,32 @@ public class SlugcatPath
 
         if (lastNRooms.ensureSlugcat(slugcar).LastOrDefault() != p.roomNumber) {
             lastNRooms[slugcar].Add(p.roomNumber);
-            Logger.LogInfo($"appended {p.roomNumber}");
+            Logger.LogInfo($"appended {p.roomNumber}, room size : {(map.hud.owner as Player).room.world.GetAbstractRoom(p.roomNumber).size}.");
+
+            /*
+                One-sized rooms
+x: 48, y: 35
+x: 48, y: 35.
+x: 48, y: 35.
+                Two-sized rooms
+x: 98, y: 35.
+
+                three-sized rooms
+x: 155, y: 35.
+
+
+                four sized rooms
+
+                five sized rooms
+
+                8-sized 
+                x: 444, y: 38. 10,04285714285714
+
+                9-sized
+                x: 152, y: 121.  10,94761904761905
+
+            */
+            
         }
 
         // ILimitMaximumRooms(slugcar, p, regionPositions);
@@ -190,6 +215,7 @@ public class SlugcatPath
         // regularOldPositionsReduction++;
         // regularOldPositionsReduction%=33;
         // if (lastNRooms[slugcar].Count > maxBackwardsRooms) {
+       
             OldPositionsCuller(slugcar);
         // }
 
@@ -203,6 +229,13 @@ public class SlugcatPath
         }
     }
 
+    public int GetRelativeRoomScreensSize(int roomId) {
+        if (map.hud.owner is not Player p) return 1;
+        var ars = p.room?.world?.GetAbstractRoom(roomId);
+        if (ars == null) return 1;
+        return Mathf.RoundToInt(Mathf.Clamp(ars.size.x * ars.size.y/(float)(48*35),1,19));
+    }
+
 
     /// <summary>
     /// if there are more than n lines for this slugcat ,
@@ -211,10 +244,10 @@ public class SlugcatPath
     /// <param name="slugcar"></param>
     public void OldPositionsCuller(SlugcatStats.Name slugcar, bool force = false)
     {
-        if (force || lastNRooms[slugcar].Count > maxBackwardsRooms)
+        if (force || lastNRooms[slugcar].Count > MaxBackwardsRooms)
         {
             List<PositionEntry> positionEntries = slugcatRegionalPositions[slugcar][CurrentRegion];
-            Logger.LogInfo($"PROCESSING WITH CULLING!!!!! Before culling, {positionEntries.Count}. Rooms:{lastNRooms[slugcar].Count}>{maxBackwardsRooms} min rooms {ModOptions.minQtyOfAccuratePositions.Value}");
+            Logger.LogInfo($"PROCESSING WITH CULLING!!!!! Before culling, {positionEntries.Count}. Rooms:{lastNRooms[slugcar].Count}>{MaxBackwardsRooms} min rooms {ModOptions.minQtyOfAccuratePositions.Value}");
             // The oldest the points, the less reluctant we should be to trimming data
             // run through the list of positions. 
             // For each set of points in a room, remove a proportion of them (based on what ?)
@@ -222,21 +255,28 @@ public class SlugcatPath
             lastNRooms[slugcar].Clear();
             int resumeIndex = 0;
             bool anyModif = false;
+            bool direTimes = lines.ensureSlugcat(slugcar).Count > 1500 + (ModOptions.minQtyOfAccuratePositions?.Value ?? 450) * 1.1f;
+            if (direTimes)
+            {
+                Logger.LogWarning($"We think there are too many lines ! {lines.ensureSlugcat(slugcar).Count}/{1500 + (ModOptions.minQtyOfAccuratePositions?.Value ?? 450) * 1.1f} with accuracy min {(ModOptions.minQtyOfAccuratePositions?.Value ?? 450)}\nAll lines will suffer sparsing !");
+            }
+
             while (resumeIndex < positionEntries.Count)
             {
                 Logger.LogInfo($"StartIndex is {resumeIndex}");
-                var startslice = positionEntries.Skip(resumeIndex);
-                var operateSlice = startslice.TakeWhile((el) => el.roomNumber == startslice.First().roomNumber && el.ageCycles == startslice.First().ageCycles);
-                if (positionEntries.IndexOf(operateSlice.Last()) > positionEntries.Count - ModOptions.minQtyOfAccuratePositions.Value) {
-                    Logger.LogInfo($"OldCuller exited because it wants at least {ModOptions.minQtyOfAccuratePositions.Value} intact pos, culling would have {resumeIndex}-{positionEntries.IndexOf(operateSlice.Last())}");
+                var startSlice = positionEntries.Skip(resumeIndex);
+                var operatingSlice = startSlice.TakeWhile((el) => el.roomNumber == startSlice.First().roomNumber && el.ageCycles == startSlice.First().ageCycles);
+                if (positionEntries.IndexOf(operatingSlice.Last()) > positionEntries.Count - ModOptions.minQtyOfAccuratePositions.Value) {
+                    Logger.LogInfo($"OldCuller exited because it wants at least {ModOptions.minQtyOfAccuratePositions.Value} intact pos, culling would have {resumeIndex}-{positionEntries.IndexOf(operatingSlice.Last())}");
                     break;
                 }
 
-                Logger.LogInfo($"slice age:{operateSlice.First().ageCycles} room {operateSlice.First().roomNumber} qty {operateSlice.Count()} btw {positionEntries.IndexOf(operateSlice.First())} and {positionEntries.IndexOf(operateSlice.Last())} \n f,l entries:\n{operateSlice.First()}\n{operateSlice.Last()}");
-                if (operateSlice.Count() <= 10)
+                int relativeRoomSize = GetRelativeRoomScreensSize(operatingSlice.First().roomNumber);
+                Logger.LogInfo($"slice age:{operatingSlice.First().ageCycles} room {operatingSlice.First().roomNumber}:{relativeRoomSize} qty {operatingSlice.Count()} btw {positionEntries.IndexOf(operatingSlice.First())} and {positionEntries.IndexOf(operatingSlice.Last())}\n{operatingSlice.First()}\n{operatingSlice.Last()}");
+                if (operatingSlice.Count() <= 4+5*relativeRoomSize && !direTimes)
                 {
-                    resumeIndex = positionEntries.IndexOf(operateSlice.Last()) +1;
-                    Logger.LogInfo($"Continuing from {resumeIndex} because not enough entries in this room");
+                    resumeIndex = positionEntries.IndexOf(operatingSlice.Last()) +1;
+                    Logger.LogInfo($"Continuing from {resumeIndex} cuz not enough entries in this room (min relative qty is 4+5*{relativeRoomSize}={4+5*relativeRoomSize})");
                     continue;
                 }
                 if (!anyModif)
@@ -244,18 +284,19 @@ public class SlugcatPath
                     clearLines();
                     anyModif = true;
                 }
-                List<PositionEntry> newSlice = [operateSlice.First()];
+                List<PositionEntry> newSlice = [operatingSlice.First()];
                 // linar rep of 6 points on count-2 indexes
-                int increment = operateSlice.Count() / 6;
+                int increment = operatingSlice.Count() / (5*relativeRoomSize);
                 Logger.LogInfo($"Increment: {increment}");
-                for (int i = 1; i < operateSlice.Count(); i += increment)
+                if (increment == 0) {Logger.LogError("Increment was 0, wtf"); increment=1;}
+                for (int i = increment; i < operatingSlice.Count()-1; i += increment)
                 {
-                    newSlice.Add(operateSlice.ElementAt(i));
+                    newSlice.Add(operatingSlice.ElementAt(i));
                 }
-                if (newSlice.Last().pos != operateSlice.Last().pos) newSlice.Add(operateSlice.Last());
+                newSlice.Add(operatingSlice.Last());
                 Logger.LogInfo($"----------------\nnew contents:\n{newSlice.First()} \n{newSlice.Last()}\n-------------");
 
-                positionEntries.RemoveRange(resumeIndex, operateSlice.Count());
+                positionEntries.RemoveRange(resumeIndex, operatingSlice.Count());
                 positionEntries.InsertRange(resumeIndex, newSlice);
                 resumeIndex = positionEntries.IndexOf(newSlice.Last()) + 1;
                 Logger.LogInfo($"after modif, resumeIndex became {resumeIndex} and the new ones are btw {positionEntries.IndexOf(newSlice.First())} and {positionEntries.IndexOf(newSlice.Last())}");

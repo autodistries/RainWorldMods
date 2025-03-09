@@ -11,7 +11,7 @@
         Put whatever you want inside here : -->
         <PluginID>nope.pathtracer</PluginID>
         <Product>Path Tracer</Product>
-        <Version>0.0.10</Version>
+        <Version>0.0.11</Version>
         <Author>Nope</Author>
         <Requirements></Requirements>
         <ModDesc>This mod is in beta ! Feel free to report any issues !_newline_Traces the path slugcat has followed during a game session. _newline_More details on features at https://codeberg.org/catsoft/RainWorldMods/src/branch/main/PathTracer#readme</ModDesc>

@@ -80,7 +80,7 @@ public class ModOptions : OptionInterface
         minTicksToRecordPoint = config.Bind("minTicksToRecordPoint", 20, minTicksRange);
         minDistanceToRecordPointTimes100 = config.Bind("minDistanceToRecordPointTimes100", 8, minDistRange);
         positionCullingPrecisionTimes1000 = config.Bind("positionCullingPrecisionTimes1000", 1500, precisionRange);
-        minQtyOfAccuratePositions  = config.Bind("minQtyOfAccuratePositions", 250, qtyPosRange);
+        minQtyOfAccuratePositions  = config.Bind("minQtyOfAccuratePositions", 400, qtyPosRange);
         Logger.LogInfo("Configurables binded ");
 
     }
@@ -108,7 +108,7 @@ public class ModOptions : OptionInterface
             description = $"Show path data when any map is open. Also linked to the keybind"
         };
 
-        OpKeyBinder opKeyBinder = new OpKeyBinder(toggleShowDataKeybind, new Vector2(200, Decalage(box: true, nextLine: true)-4), new Vector2(20, 20))
+        OpKeyBinder opKeyBinder = new OpKeyBinder(toggleShowDataKeybind, new Vector2(230, Decalage(box: true, nextLine: true)-4), new Vector2(20, 20))
         {
             description = "The keybind which will toggle showing data on map"
         };
@@ -132,52 +132,54 @@ public class ModOptions : OptionInterface
         //     description = $"Also record data of your slugpups"
         // };
 
-        
-        var posQtyLabel = new OpLabel(10f, Decalage(), "Minimum accurate positions");
-        var posQtySlider = new OpSlider(minQtyOfAccuratePositions, new Vector2(180f, Decalage(slider: true, nextLine: true)), 240)
-        {
-            description = $"Minimum quantity of recent positions that won't ever be culled",
-        };
+      
 
 
 
         var lineWidthLabel = new OpLabel(10f, Decalage(), "Line width");
-        var lineWidthSlider = new OpFloatSlider(lineWidth, new Vector2(180f, Decalage(slider: true, nextLine: true)), 240)
+        var lineWidthSlider = new OpFloatSlider(lineWidth, new Vector2(200f, Decalage(slider: true, nextLine: true)), 240)
         {
             description = $"Width of lines drawn on map"
         };
 
 
         var maxCyclesToRememberLabel = new OpLabel(10f, Decalage(), "Max cycles to retain positions");
-        var maxCyclesToRememberSlider = new OpSlider(maxCyclesToRemember, new Vector2(180f, Decalage(slider: true, nextLine: true)), 240)
+        var maxCyclesToRememberSlider = new OpSlider(maxCyclesToRemember, new Vector2(200f, Decalage(slider: true, nextLine: true)), 240)
         {
-            description = $"Maximum number of cycles positions will be remembered. 0 means clear on new cycle. Their opacity will be reduced over time"
+            description = $"Maximum number of cycles positions will be remembered for. 0 means clear on new cycle. Their opacity will be reduced over time"
         };
 
         // var maxRoomsPerRegionLabel = new OpLabel(10f, Decalage(), "Max rooms per region");
-        // var maxRoomsPerRegionSlider = new OpSlider(maxRoomsToRememberPerRegion, new Vector2(180f, Decalage(slider: true, nextLine: true)), 240)
+        // var maxRoomsPerRegionSlider = new OpSlider(maxRoomsToRememberPerRegion, new Vector2(200f, Decalage(slider: true, nextLine: true)), 240)
         // {
         //     description = $"Maximum number of different rooms to keep data from, per region and per slugcat. 0 to not limit rooms"
         // };
 
 
         var minTicksLabel = new OpLabel(10f, Decalage(), "Minimum ticks per pos");
-        var minTicksSlider = new OpSlider(minTicksToRecordPoint, new Vector2(180f, Decalage(slider: true, nextLine: true)), 240)
+        var minTicksSlider = new OpSlider(minTicksToRecordPoint, new Vector2(200f, Decalage(slider: true, nextLine: true)), 240)
         {
             description = $"Minimum amount of ticks required to save a position"
         };
 
 
         var minDistLabel = new OpLabel(10f, Decalage(), "Minimum distance per pos");
-        var minDistSlider = new OpSlider(minDistanceToRecordPointTimes100, new Vector2(180f, Decalage(slider: true, nextLine: true)), 240)
+        var minDistSlider = new OpSlider(minDistanceToRecordPointTimes100, new Vector2(200f, Decalage(slider: true, nextLine: true)), 240)
         {
             description = $"Minimum distance required for saving a position. Actual value vill be /100",
         };
 
-        var posPrecLabel = new OpLabel(10f, Decalage(), "Data culling");
-        var posPrecSlider = new OpSlider(positionCullingPrecisionTimes1000, new Vector2(180f, Decalage(slider: true, nextLine: true)), 240)
+        var posPrecLabel = new OpLabel(10f, Decalage(), "Linear data culling");
+        var posPrecSlider = new OpSlider(positionCullingPrecisionTimes1000, new Vector2(200f, Decalage(slider: true, nextLine: true)), 240)
         {
             description = $"When going in a staight line, intermediate points are culled\nThis decides the precision of what is considered straight.\nDecrease only if you don't like the current result ! /1000",
+        };
+
+          
+        var posQtyLabel = new OpLabel(10f, Decalage(), "Old sparse data culling");
+        var posQtySlider = new OpSlider(minQtyOfAccuratePositions, new Vector2(200f, Decalage(slider: true, nextLine: true)), 240)
+        {
+            description = $"Regularly, positions created more than this amount of positions will be made sparse\nEach old room will be set to cap on a minimal amount of positions\nOverall trajectory should remain readable",
         };
 
         // var openFileBtn = new OpSimpleButton(new(10f, Decalage(nextBtn:true)), new(120, 30), "Open folder") {
@@ -214,7 +216,7 @@ public class ModOptions : OptionInterface
         // };
 
 
-        // var dataRésuméScrollBox =  new OpScrollBox(new Vector2(5f, Decalage() - 180f), new Vector2(590f, 200f), dataRésuméTextBox.size.y + 10f);
+        // var dataRésuméScrollBox =  new OpScrollBox(new Vector2(5f, Decalage() - 200f), new Vector2(590f, 200f), dataRésuméTextBox.size.y + 10f);
 
         // deleteFileBtn.OnPressDone += (_) =>
         // {

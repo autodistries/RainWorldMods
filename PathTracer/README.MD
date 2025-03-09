@@ -16,10 +16,10 @@ You can configure a bunch of things in the settings (**defaults**) :
 - Making color line red if only one player is playing can be enabled/**disabled**
 - The width of lines drawn on map can be modified (**2.5f**)
 - Maximum number of cycles to retain each positions for (**1**) (past cycles will become transparent)
-- Maximum number of rooms to keep per region and per slugcat (**13**) (if more rooms have data in this region, the data will be deleted)
 - Minimum game ticks to record a new position (**8**) (a position precision factor) (smaller is more precise)
 - Minimum distance a new position has to have between the last one taken (**20**) (another position precision factor) (smaller is more precise)
-- Precision of the data culling (**1500**) (points gathered in the same line are deleted to save up resources) (higher is less precise)
+- Precision of the linear data culling (**1500**) (points gathered in the same line are deleted to save up resources) (higher is less precise)
+- Precision of the old data sparsing (**400**) (rooms of which points were made more than this amount of points ago get their quantity of points decreased, overall trajectory remains readable) (lower value keeps less exact positions)
 
 ## Screenshots
 
