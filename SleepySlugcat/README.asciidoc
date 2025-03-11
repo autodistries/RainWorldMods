@@ -19,6 +19,9 @@ When you are in a calm place, take the time to sleep by holding down and relaxin
   *  Supports all game modes, most likely
   *  Supports multiple players
 
+
+## THis disables the jolly emote
+
 ## Steam install
 Visit https://steamcommunity.com/sharedfiles/filedetails/?id=3310861858 and click Subscribe
 
@@ -43,3 +46,6 @@ image::imagesForDescription/modOptions.png[]
 3.7: give some immunity to slugcat with collision when starting to sleep, because when sleeping with gooieducks, they are so big that they unsleep us when we lose grasp on them
 3.8: fix void sea
 3.9: fix anther bug related to creatures taking damage
+
+4.?: imprement basic meadow compatibility 
+4.1.2: add jolly emote support

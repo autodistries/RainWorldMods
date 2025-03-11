@@ -9,6 +9,8 @@ using System.Drawing.Imaging;
 using static SleepySlugcat.PluginInfo;
 using RainMeadow;
 using System.Reflection;
+using System.Security.Permissions;
+[assembly: SecurityPermission(SecurityAction.RequestMinimum, SkipVerification = true)]
 
 namespace SleepySlugcat;
 
@@ -371,6 +373,10 @@ public partial class SleepySlugcatto : BaseUnityPlugin
     /// <param name="self"></param>
     private void NoYouDont(On.Player.orig_JollyEmoteUpdate orig, Player self)
     {
+        // at emoteSleepCounter:1.596, no curve at all
+        // at 2.408002, we are in full curve
+        // self.forceSleepCounter (between 0 and 215) could be mapped to self.emoteSleepCounter (between 1.596 and  2.408)
+        self.emoteSleepCounter = Mathf.Lerp(1.596f, 2.408f, self.forceSleepCounter / 215f);
         return;
     }
 
