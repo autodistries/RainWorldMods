@@ -42,19 +42,5 @@ Some scenes are broken: Outro_3_Face, Intro_10_Fall, Intro_9_Rainy_Climb (you wi
 
 ![In-menu UI](images/ui.png)
 
-![Demo](images/demo.webm)
-![Demo](images/demo.mp4)
-![Demo](images/demo.gif)
-
+![Video demo](./images/demo.webm)
 <video src='./images/demo.webm'></video>
-
-<p>
-	<iframe
-		width="560"
-		height="315"
-		src="./images/demo.webm"
-		frameborder="0"
-		allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-		allowfullscreen
-	></iframe>
-</p>
