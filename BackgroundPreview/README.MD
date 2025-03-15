@@ -45,7 +45,5 @@ Some scenes are broken: Outro_3_Face, Intro_10_Fall, Intro_9_Rainy_Climb (you wi
 ![Video demo](./images/demo.webm)
 
 
-<video src='./images/demo.webm'></video>
 
 
-<video src='./images/demo.webm'/>
