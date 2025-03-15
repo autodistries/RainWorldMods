@@ -1,0 +1,154 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+<!-- Please edit the namespace of the main ModName.cs file. It does not get updated automatically
+    Namespace should be the same as the name of this csproj (without the file ext.) (here, ModName)
+    You should also probably change the names of ModName.* to somethings that matches what this mod does
+    You can safely delete the .zip file
+     -->
+    <PropertyGroup>
+        <!-- This is the place where you input mod data ! 
+        Other files will get updated based on that.
+        Put whatever you want inside here : -->
+        <PluginID>nope.background.preview</PluginID>
+        <Product>Background Preview</Product>
+        <Version>0.1.0</Version>
+        <Author>Nope</Author>
+        <Requirements></Requirements>
+        <ModDesc>Click on the PREVIEW button in Options -&gt; Backgrounds to preview any Scene in full-screen, or on the button in this mod's Remix menu._newline_The Preview menu includes controls info, and you can configure what to see with keyboard._newline_Works with and without Remix/MSC/any other mod_newline_This might still spoil you, so user discretion is advised !</ModDesc>
+        <Source></Source>
+        <!-- These are variables we'll use inside this file -->
+
+        <TargetFramework>net48</TargetFramework>
+        <LangVersion>12</LangVersion>
+
+        <OutDir>./$(AssemblyName)/plugins</OutDir>
+        <!-- where the compiled mod will be placed -->
+
+        <RWDir>$(HOME)/.local/share/Steam/steamapps/common/Rain World/</RWDir>
+        <!-- The path where your Rain World executable is stored -->
+
+        <LocalLibsDir>./libs/</LocalLibsDir>
+        <!-- The path where you can put local libs. You won't need that for most projects, but putting -->
+
+        <!-- This is for outputting pdb files, helpful for rebugging (provides the line of the error if it comes from your mod). 
+        You can turn that off for released mods -->
+        <DebugSymbols>True</DebugSymbols>
+        <DebugType>portable</DebugType>
+    </PropertyGroup>
+
+
+
+
+    <!-- This group fetches every dll from the game & from BepInEx -->
+    <ItemGroup>
+        <Reference Include="$(RWDir)RainWorld_Data/Managed/*.dll">
+            <Private>false</Private>
+        </Reference>
+        <Reference Include="$(RWDir)BepInEx/*/*.dll">
+            <Private>false</Private>
+        </Reference>
+    </ItemGroup>
+    <!-- This group fetches every dll from ./libs. You might not need it, but you can leave it be -->
+    <ItemGroup>
+        <Reference Include="./libs/*.dll">
+            <Private>false</Private>
+        </Reference>
+    </ItemGroup>
+
+
+
+
+
+
+
+
+
+    <!-- This event writes off the modinfo.json file, then copies the whole mod to the mods folder -->
+    <Target Name="PostBuild"
+            AfterTargets="PostBuildEvent">
+        <!-- Create the data; we will replace the fields later -->
+        <PropertyGroup>
+            <ModinfoGeneric><![CDATA[
+  {
+    "id"%3A "PluginID--",
+    "name"%3A "Product--",
+    "version"%3A "Version--",
+    "authors"%3A "Author--",
+    "description"%3A "ModDesc--",
+    "requirements"%3A [],
+    "requirements_names"%3A [],
+    "checksum_override_version"%3A true,
+    "hide_version"%3A false,
+    "source"%3A "Source--",
+
+  }
+        ]]></ModinfoGeneric>
+        </PropertyGroup>
+        <!-- Write the data to a modinfo.json -->
+        <WriteLinesToFile Lines="$(ModinfoGeneric)"
+                          File="./$(AssemblyName)/modinfo.json"
+                          Overwrite="true"
+                          Condition="Exists('./$(AssemblyName)')" />
+        <!-- replace fields by the daya we chose at the beginning of this csproj -->
+        <Exec command="sed -i &quot;s/PluginID--/$(PluginID)/&quot; ./$(AssemblyName)/modinfo.json" />
+        <Exec command="sed -i &quot;s/Product--/$(Product)/&quot; ./$(AssemblyName)/modinfo.json" />
+        <Exec command="sed -i &quot;s/Version--/$(Version)/&quot; ./$(AssemblyName)/modinfo.json" />
+        <Exec command="sed -i &quot;s/Author--/$(Author)/&quot; ./$(AssemblyName)/modinfo.json" />
+        <Exec command="sed -i &quot;s|ModDesc--|$(ModDesc)|&quot; ./$(AssemblyName)/modinfo.json" />
+        <Exec command="sed -i &quot;s|_newline_|\\\n|g&quot; ./$(AssemblyName)/modinfo.json" />
+        <Exec command="sed -i &quot;s|Source--|$(Source)|&quot; ./$(AssemblyName)/modinfo.json" />
+        <Exec command="echo Updated ./$(AssemblyName)/modinfo.json" />
+        <!-- Delete any previous modfiles from the game repo -->
+        <Exec command="# rm -rf '$(RWDir)'RainWorld_Data/StreamingAssets/mods/$(AssemblyName); echo cleared old mod copy" />
+        <!-- cooooopy new game files to the mods dir -->
+        <Exec Command="cp -r ./$(AssemblyName) '$(RWDir)'RainWorld_Data/StreamingAssets/mods/; echo 'Copied mod data to Rain World mods folder'"
+              Condition="'$(OS)' == 'Unix'" />
+        <!-- create a zip of the mod in cwd -->
+        <Exec Command="zip -r ./$(AssemblyName) ./$(AssemblyName)"
+              Condition="'$(OS)' == 'Unix'" />
+        <!-- try to kill the currently running rain world executable -->
+        <!-- <Exec command="kill -2 $(ps -A | grep RainWorld | awk '{print $1}') | echo 0" /> -->
+        <!-- <Exec command="env STEAM_COMPAT_DATA_PATH=/home/guigui/.local/share/Steam/steamapps/compatdata/312520 STEAM_COMPAT_CLIENT_INSTALL_PATH=/home/guigui/.local/share/Steam/steamapps/compatdata WINEDLLOVERRIDES=winhttp=n,b '/home/guigui/.local/share/Steam/steamapps/common/Proton 8.0/proton' waitforexitandrun '/home/guigui/.local/share/Steam/steamapps/common/Rain World/RainWorld.exe' &amp;" /> -->
+    </Target>
+
+
+
+
+
+
+
+
+    <!-- This action fills the PluginInfo.cs with the info on top of this csproj -->
+    <!-- RootNamespace will be the name of THIS CSPROJ minus the file extention, make sure you use that namespace at least in the main file -->
+    
+    <Target Name="AddGeneratedFile"
+            BeforeTargets="BeforeBuild"
+            Inputs="./"
+            Outputs="./PluginInfo.cs">
+        <PropertyGroup>
+            <BepInExPluginGuid>$(PluginID)</BepInExPluginGuid>
+            <BepInExPluginName>$(Product)</BepInExPluginName>
+            <BepInExPluginVersion>$(Version)</BepInExPluginVersion>
+            <GeneratedText><![CDATA[
+// This file was generated on build by the .csproj
+namespace $(RootNamespace)
+{
+    public static class PluginInfo
+    {
+        public const string PLUGIN_GUID = "$(BepInExPluginGuid)"%3B
+        public const string PLUGIN_NAME = "$(BepInExPluginName)"%3B
+        public const string PLUGIN_VERSION = "$(BepInExPluginVersion)"%3B
+    }
+}
+      ]]></GeneratedText>
+            <GeneratedFilePath>./PluginInfo.cs</GeneratedFilePath>
+        </PropertyGroup>
+        <ItemGroup>
+            <Compile Include="$(GeneratedFilePath)" />
+        </ItemGroup>
+        <WriteLinesToFile Lines="$(GeneratedText)"
+                          File="$(GeneratedFilePath)"
+                          WriteOnlyWhenDifferent="false"
+                          Overwrite="true" />
+    </Target>
+</Project>
