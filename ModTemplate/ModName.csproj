@@ -11,7 +11,7 @@
         Put whatever you want inside here : -->
         <PluginID>nope.modname</PluginID>
         <Product>Mod name</Product>
-        <Version>0.0.2</Version>
+        <Version>0.0.3</Version>
         <Author>Nope</Author>
         <Requirements></Requirements>
         <ModDesc>A sample mod. Testing newlines like _newline_ and also &lt;LINE&gt;these kind of line jump</ModDesc>

@@ -1,4 +1,6 @@
 ﻿using BepInEx;
+using System;
+
 
 
 // Access private fields and stuff
@@ -23,15 +25,20 @@ public partial class ModMainClass : BaseUnityPlugin
     {
     }
 
-    private void OnEnabled()
+    private void OnEnable()
     {
         if (done) return;
         Logger.LogInfo("Hello World !");
         On.RainWorld.OnModsInit += RainWorldOnOnModsInitDetour;
+        On.Player.JollyEmoteUpdate += logJollyInfoPlease;
         done = true;
     }
 
-  
+    private void logJollyInfoPlease(On.Player.orig_JollyEmoteUpdate orig, Player self)
+    {
+        Logger.LogInfo($"Jolly Update : emoteSleepCounter:{self.emoteSleepCounter} sleepCurlUp:{self.sleepCurlUp}");
+        orig(self);
+    }
 
     private void RainWorldOnOnModsInitDetour(On.RainWorld.orig_OnModsInit orig, RainWorld self)
     {
