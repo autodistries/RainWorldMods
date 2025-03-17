@@ -1,3 +1,7 @@
+<!-- mediaUrlPrefix:https://codeberg.org/catsoft/RainWorldMods/media/branch/main/BackgroundPreview/ -->
+
+
+<!-- this is another comment line -->
 # Background preview
 Lets you preview any in-game scene full screen, with parallax and no cluttery-ui\
 ![](BackgroundPreview/thumbnail.png)
@@ -47,3 +51,6 @@ Some scenes are broken: Outro_3_Face, Intro_10_Fall, Intro_9_Rainy_Climb (you wi
 
 
 
+-----------
+Workshop : https://steamcommunity.com/sharedfiles/filedetails/?id=3443949906\
+Manual install from [./BackgroundPreview.zip](./BackgroundPreview.zip)

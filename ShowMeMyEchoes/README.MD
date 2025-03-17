@@ -9,3 +9,9 @@ From the remix menu, you can configure :
 ![](./ShowMeMyEchoes/configMenu.png)
 
 This mod is also available in the [Workshop](https://steamcommunity.com/sharedfiles/filedetails/?id=3432462352)
+
+
+## Changelog
+
+### 0.1.2
+add more checks to try to prevent errors from happening when dynamically removing echoes 

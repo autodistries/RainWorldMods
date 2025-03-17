@@ -73,11 +73,15 @@ public partial class ShowMeMyEchoes : BaseUnityPlugin
             Logger.LogInfo($"Found a savestate for {saveSlot}");
             foreach (var pair in menu.manager.rainWorld.progression.currentSaveState.deathPersistentSaveData.ghostsTalkedTo)
             {//#FEBA70
-                regionsAlreadyProcessed.Add(pair.Key.ToString());
+                regionsAlreadyProcessed.Add(pair.Key.ToString().ToUpper());
                 FSprite s = null;
                 bool addIt = false;
-                Logger.LogInfo($"adding a token for {pair.Key.ToString()} (val {pair.Value})");
+                Logger.LogInfo($"adding a token for {pair.Key} (val {pair.Value})");
                 GhostID ghostID = GetGhostID(pair.Key.ToString().ToUpper());
+                if (ghostID == GhostID.NoGhost) {
+                    Logger.LogWarning("Could not find registered ghost ID of region"+pair.Key.ToString().ToUpper()+", discarding it");
+                    continue;
+                }
                 if ((pair.Value != 0) && false == SpawnGhost(ghostID, 9, 9, pair.Value, saveSlot == SlugcatStats.Name.Red))
                 {
                     Logger.LogDebug($"This one has already been collected before !");
@@ -102,6 +106,14 @@ public partial class ShowMeMyEchoes : BaseUnityPlugin
                 }
                 if (addIt)
                 {
+                    if (!singleCollectiblesTracker.sprites.ContainsKey(pair.Key.ToString().ToLower())) {
+                        Logger.LogWarning("Would have added, but could not find ghost ID in tracker:"+pair.Key.ToString().ToLower()+", discarding it");
+                        continue;
+                    }
+                    if (singleCollectiblesTracker.regionIcons.Length == 0) {
+                        Logger.LogError("No region icons to add collectible dot to.");
+                        continue;
+                    }
                     singleCollectiblesTracker.sprites[pair.Key.ToString().ToLower()].Add(s);
                     singleCollectiblesTracker.regionIcons.First().container.AddChild(s);
                 }

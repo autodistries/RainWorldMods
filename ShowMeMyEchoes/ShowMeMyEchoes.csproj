@@ -11,7 +11,7 @@
         Put whatever you want inside here : -->
         <PluginID>nope.show.me.my.echoes</PluginID>
         <Product>Show Me My Echoes</Product>
-        <Version>0.1.1</Version>
+        <Version>0.1.2</Version>
         <Author>Nope</Author>
         <Requirements></Requirements>
         <ModDesc>This mod shows regions where you met an echo inside the Collectibles Tracker.&lt;LINE&gt;From the Remix menu, you can configure if the mod is enabled, if you want primed echoes to show up, and if you want never-before seen echoes to show up.</ModDesc>

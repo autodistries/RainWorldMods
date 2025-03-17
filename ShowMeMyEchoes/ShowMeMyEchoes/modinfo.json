@@ -1,7 +1,7 @@
 {
     "id": "nope.show.me.my.echoes",
     "name": "Show Me My Echoes",
-    "version": "0.1.1",
+    "version": "0.1.2",
     "authors": "Nope",
     "description": "This mod shows regions where you met an echo inside the Collectibles Tracker.<LINE>From the Remix menu, you can configure if the mod is enabled, if you want primed echoes to show up, and if you want never-before seen echoes to show up.",
     "requirements": ["rwremix"],

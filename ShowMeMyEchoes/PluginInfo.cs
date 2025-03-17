@@ -5,6 +5,6 @@ namespace ShowMeMyEchoes
     {
         public const string PLUGIN_GUID = "nope.show.me.my.echoes";
         public const string PLUGIN_NAME = "Show Me My Echoes";
-        public const string PLUGIN_VERSION = "0.1.1";
+        public const string PLUGIN_VERSION = "0.1.2";
     }
 }
