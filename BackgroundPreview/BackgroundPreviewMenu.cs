@@ -34,6 +34,8 @@ public class BackgroundPreviewMenu : Menu.Menu
     private int flipBookDelay;
     private int splitSceneDelay;
     private int showHelpDelay;
+
+    private int soundControlDelay = 0;
     private bool ShowAll
     {
         get => Options.showAll.Value;
@@ -77,6 +79,7 @@ public class BackgroundPreviewMenu : Menu.Menu
     }
 
     private int pickerLimit;
+    // this.Translate exists
     private string HelpInfo => @$"Viewing {ModMainClass.lastSelectedBkg}
 -------------------
 Exit preview | Esc
@@ -95,6 +98,7 @@ Allow passages ({ShowPassages}) | 4
 Allow slugcats ({ShowSlugcat}) | 5
 Allow dreams ({ShowDreams}) | 6
 
+Toggle background noise | N
 Force-free memory | M
 Used memory: {Profiler.GetTotalReservedMemoryLong() / 1024 / 1024}MB
 Max memory: {maxAllowedReservedMB}MB";
@@ -103,6 +107,7 @@ Max memory: {maxAllowedReservedMB}MB";
 
     public BackgroundPreviewMenu(ProcessManager manager) : base(manager, ProcessID.BackgroundPreviewID)
     {
+        mySoundLoopID = SoundID.MENU_Main_Menu_LOOP;
         manager.menuesMouseMode = false;
 
         pages.Add(new Menu.Page(this, null, "main", 0));
@@ -153,8 +158,11 @@ Max memory: {maxAllowedReservedMB}MB";
         bool flag = RWInput.CheckPauseButton(0);
         if (flag && !lastExitButton && manager.dialog == null)
         {
+        Futile.stage.RemoveChild(scenesInfoLabel);
+
             ModMainClass.options._SaveConfigFile();
             manager.RequestMainProcessSwitch(previousProcessID);
+            return;
         }
         else lastExitButton = flag;
 
@@ -203,6 +211,28 @@ Max memory: {maxAllowedReservedMB}MB";
             flatMode = !flatMode;
             ChangeScene(0);
         }
+
+        if (Input.GetKey("n") && soundControlDelay == 0)
+        {
+
+            if (mySoundLoopID == SoundID.MENU_Main_Menu_LOOP)
+            {
+                manager.musicPlayer?.FadeOutAllSongs(30f);
+                soundLoop.Destroy();
+                mySoundLoopID = SoundID.None;
+                soundLoop = null;
+                Logger.LogInfo("Removed background noises");
+            }
+            else
+            {
+                mySoundLoopID = SoundID.MENU_Main_Menu_LOOP;
+				soundLoop = PlayLoop(mySoundLoopID, 0f, 1f, 1f, isBkgLoop: true);
+                Logger.LogInfo("Added background noises");
+
+            }
+            soundControlDelay = 10;
+        }
+
 
         if (pickerLimit == 0)
         {
@@ -255,6 +285,7 @@ Max memory: {maxAllowedReservedMB}MB";
         if (splitSceneDelay != 0) splitSceneDelay--;
         if (showHelpDelay != 0) showHelpDelay--;
         if (pickerLimit != 0) pickerLimit--;
+        if (soundControlDelay != 0) soundControlDelay--;
 
         if (Input.anyKey && scenesInfoLabel.alpha != 0) scenesInfoLabel.text = HelpInfo;
     }

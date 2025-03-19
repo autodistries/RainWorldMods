@@ -1,12 +1,9 @@
 <!-- mediaUrlPrefix:https://codeberg.org/catsoft/RainWorldMods/media/branch/main/BackgroundPreview/ -->
-
-
-<!-- this is another comment line -->
 # Background preview
 Lets you preview any in-game scene full screen, with parallax and no cluttery-ui\
 ![](BackgroundPreview/thumbnail.png)
 Open from this mod's Remix menu, or from Options -> Backgrounds -> PREVIEW (only with Remix enabled).\
-Also supports every kind of `MenuScene.SceneID`, as long as they are properly registered.\
+This opens a kind of scenes gallery. It also supports every kind of `MenuScene.SceneID`, as long as they are properly registered.\
 
 ## Controls
 Mouse is disabled on the Preview menu, but moving it around still moves layers of the scene.\
@@ -16,6 +13,7 @@ Info on controls is also available in the menu\
 - Left and right (joysticks supported) let you navigate to the next scene
 - `R` lets you reload the current scene
 - `M` forces unloading cached resources; This is done automatically before OOM, but if you find it sluggish you can do it yourself. 
+- `N` toggles background noises on and off. The same noise as main menu is used.
 - `T` toggles flatmode. In my experience this doesn't do much, and will be reset to False if it causes errors
 - `S` goes to next slide, for scenes that have more than one slide (i.e. gourmand ending)
 - `F` goes to next slide of Gourmand's dreams
@@ -31,6 +29,7 @@ You can configure, from the Preview menu and using your keyboard, the kind of Sc
 - Passages (shows passage scenes)
 - Slugcats (from the character select screen)
 - Dreams
+
 
 The first scenne you will see will neverr be spoilery, but after that you can see everithing you want to\
 Default settings have these scenes to true: All, Backgrounds and Intros.\

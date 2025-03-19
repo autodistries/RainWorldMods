@@ -1,0 +1,51 @@
+[table comment:mediaUrlPrefix:https://codeberg.org/catsoft/RainWorldMods/media/branch/main/BackgroundPreview/][/table]
+[h1] Background preview [/h1]
+Lets you preview any in-game scene full screen, with parallax and no cluttery-ui
+Open from this mod's Remix menu, or from Options -> Backgrounds -> PREVIEW (only with Remix enabled).
+This opens a kind of scenes gallery. It also supports every kind of [noparse]MenuScene.SceneID[/noparse], as long as they are properly registered.
+
+[h2] Controls [/h2]
+Mouse is disabled on the Preview menu, but moving it around still moves layers of the scene.
+Info on controls is also available in the menu
+[*] [noparse]H[/noparse] toggles the info/help text
+[*] [noparse]Esc[/noparse] lets you quit the menu
+[*] Left and right (joysticks supported) let you navigate to the next scene
+[*] [noparse]R[/noparse] lets you reload the current scene
+[*] [noparse]M[/noparse] forces unloading cached resources; This is done automatically before OOM, but if you find it sluggish you can do it yourself. 
+[*] [noparse]N[/noparse] toggles background noises on and off. The same noise as main menu is used.
+[*] [noparse]T[/noparse] toggles flatmode. In my experience this doesn't do much, and will be reset to False if it causes errors
+[*] [noparse]S[/noparse] goes to next slide, for scenes that have more than one slide (i.e. gourmand ending)
+[*] [noparse]F[/noparse] goes to next slide of Gourmand's dreams
+
+
+[/list]
+[h2] Configuration [/h2]
+You can configure, from the Preview menu and using your keyboard, the kind of Scenes you want to see.
+[*] All (everything)
+[*] Backgrounds (regions, and the game's main menu backgrounds)
+[*] Intros (scenes that play when starting a character)
+[*] Endings (scenes that play when finishing a character, or slugcat art available after that on the character select)
+[*] Passages (shows passage scenes)
+[*] Slugcats (from the character select screen)
+[*] Dreams
+
+
+[/list]The first scenne you will see will neverr be spoilery, but after that you can see everithing you want to
+Default settings have these scenes to true: All, Backgrounds and Intros.
+Your configuration is saved upon exiting the Preview menu.
+
+[h2] Quirks [/h2]
+If you feel laginness, press M to manually clear assets. If 32b, the game will crash when it uses >2600Mb, and way higher with 64b. By default, if the game takes 1GB more than it did in the beginning (capped at 2.4Gb), it clears itself.
+Sometimes the game may mess up loading scenes; that can be solved by pressing R, or M in the worst cases
+Not all categories are well-defined, because the game has an irregular scene-namesing scheme
+Some scenes are broken: Outro_3_Face, Intro_10_Fall, Intro_9_Rainy_Climb (you will get flashbanged with the two Intro ones, prepare your eyes)
+
+[h2] Visuals [/h2]
+
+[url=https://codeberg.org/catsoft/RainWorldMods/media/branch/main/BackgroundPreview/images/ui.png]In-menu UI[/url]
+
+Video demo: 
+[video]https://codeberg.org/catsoft/RainWorldMods/media/branch/main/BackgroundPreview/./images/demo.webm[/video]
+
+[hr][/hr]
+Manual install from https://codeberg.org/catsoft/RainWorldMods/BackgroundPreview

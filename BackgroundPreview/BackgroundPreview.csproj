@@ -11,7 +11,7 @@
         Put whatever you want inside here : -->
         <PluginID>nope.background.preview</PluginID>
         <Product>Background Preview</Product>
-        <Version>0.1.0</Version>
+        <Version>0.1.2</Version>
         <Author>Nope</Author>
         <Requirements></Requirements>
         <ModDesc>Click on the PREVIEW button in Options -&gt; Backgrounds to preview any Scene in full-screen, or on the button in this mod's Remix menu._newline_The Preview menu includes controls info, and you can configure what to see with keyboard._newline_Works with and without Remix/MSC/any other mod_newline_This might still spoil you, so user discretion is advised !_newline_</ModDesc>
