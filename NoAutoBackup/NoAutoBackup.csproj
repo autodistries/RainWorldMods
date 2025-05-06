@@ -10,11 +10,11 @@
         Other files will get updated based on that.
         Put whatever you want inside here : -->
         <PluginID>nope.no.auto.backup</PluginID>
-        <Product>Auto-backup disabler</Product>
-        <Version>2.0</Version>
+        <Product>deprecated-Auto-backup disabler </Product>
+        <Version>2.1</Version>
         <Author>Nope</Author>
         <Requirements></Requirements>
-        <ModDesc>This mod prevents automatic backups from being created. Dynamic configuration in Remix interface.&lt;LINE&gt;Do not enable if you don't know what you're doing !&lt;LINE&gt;You risk losing progress !</ModDesc>
+        <ModDesc>This mod is deprecated in favor of BackupTools._newline_This mod prevents automatic backups from being created. Dynamic configuration in Remix interface.&lt;LINE&gt;Do not enable if you don't know what you're doing !&lt;LINE&gt;You risk losing progress !</ModDesc>
         <TargetFramework>net48</TargetFramework>
         <LangVersion>12</LangVersion>
         <!-- These are variables we'll use inside this file -->

@@ -1,9 +1,9 @@
 {
     "id": "nope.no.auto.backup",
-    "name": "Auto-backup disabler",
-    "version": "2.0",
+    "name": "deprecated-Auto-backup disabler ",
+    "version": "2.1",
     "authors": "Nope",
-    "description": "This mod prevents automatic backups from being created. Dynamic configuration in Remix interface.<LINE>Do not enable if you don't know what you're doing !<LINE>You risk losing progress !",
+    "description": "This mod is deprecated in favor of BackupTools.\nThis mod prevents automatic backups from being created. Dynamic configuration in Remix interface.<LINE>Do not enable if you don't know what you're doing !<LINE>You risk losing progress !",
     "requirements": [],
     "requirements_names": [],
     "checksum_override_version": true,

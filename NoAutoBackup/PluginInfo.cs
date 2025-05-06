@@ -4,7 +4,7 @@ namespace NoAutoBackup
     public static class PluginInfo
     {
         public const string PLUGIN_GUID = "nope.no.auto.backup";
-        public const string PLUGIN_NAME = "Auto-backup disabler";
-        public const string PLUGIN_VERSION = "2.0";
+        public const string PLUGIN_NAME = "deprecated-Auto-backup disabler ";
+        public const string PLUGIN_VERSION = "2.1";
     }
 }
