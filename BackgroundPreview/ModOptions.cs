@@ -13,7 +13,6 @@ public class Options : OptionInterface
     static public Configurable<bool> showDreams;
     public Options()
     {
-
         showAll = config.Bind("showAll", true);
         showBackgrounds = config.Bind("showBackgrounds", true);
         showIntro = config.Bind("showIntro", true);

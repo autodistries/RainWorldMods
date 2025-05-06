@@ -9,19 +9,20 @@
         <!-- This is the place where you input mod data ! 
         Other files will get updated based on that.
         Put whatever you want inside here : -->
-        <PluginID>nope.background.preview</PluginID>
-        <Product>Background Preview</Product>
-        <Version>0.1.3</Version>
+        <PluginID>nope.backup.tools</PluginID>
+        <Product>Backup tools</Product>
+        <Version>0.0.1</Version>
         <Author>Nope</Author>
         <Requirements></Requirements>
-        <ModDesc>Click on the PREVIEW button in Options -&gt; Backgrounds to preview any Scene in full-screen, or on the button in this mod's Remix menu._newline_The Preview menu includes controls info, and you can configure what to see with keyboard._newline_Works with and without Remix/MSC/any other mod_newline_This might still spoil you, so user discretion is advised !_newline_</ModDesc>
+        <TargetGameVer>v1.10.3</TargetGameVer>
+        <ModDesc>Backups-related QOLs._newline_Allows for 50+ auto backups, disabling auto backups._newline_Backups quantity and size, and page numbers on the menu.</ModDesc>
         <Source></Source>
         <!-- These are variables we'll use inside this file -->
 
         <TargetFramework>net48</TargetFramework>
         <LangVersion>12</LangVersion>
 
-        <OutDir>./$(AssemblyName)/plugins</OutDir>
+        <OutDir>./$(AssemblyName)/$(TargetGameVer)/plugins</OutDir>
         <!-- where the compiled mod will be placed -->
 
         <RWDir>$(HOME)/.local/share/Steam/steamapps/common/Rain World/</RWDir>

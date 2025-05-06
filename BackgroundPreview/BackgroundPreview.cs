@@ -109,6 +109,7 @@ public partial class ModMainClass : BaseUnityPlugin
         previewButton = new SimpleButton(self, self.pages[0], "PREVIEW", "PREVIEWSCENE", new Vector2(580f, 50f), btnSize);
         self.pages[0].subObjects.Add(previewButton);
 
+
         lastSelectedBkg = manager.rainWorld.options.TitleBackground;
         Logger.LogInfo("Initialized with bkg " + lastSelectedBkg);
     }

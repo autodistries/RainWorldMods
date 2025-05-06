@@ -128,7 +128,7 @@ Max memory: {maxAllowedReservedMB}MB";
         scenesInfoLabel = new FLabel(Custom.GetFont(), HelpInfo)
         {
             x = manager.rainWorld.options.ScreenSize.x - 20f + (1366f - manager.rainWorld.options.ScreenSize.x) / 2f,//manager.rainWorld.screenSize.x / 2f + 0.01f,
-            y = manager.rainWorld.options.ScreenSize.y - 160f, //Mathf.Max(0.01f + manager.rainWorld.options.SafeScreenOffset.y, 20.01f),
+            y = manager.rainWorld.options.ScreenSize.y - (HelpInfo.Split('\n').Length*10-50), //Mathf.Max(0.01f + manager.rainWorld.options.SafeScreenOffset.y, 20.01f),
             //new Vector2(manager.rainWorld.options.ScreenSize.x - 50f + (1366f - manager.rainWorld.options.ScreenSize.x) / 2f, manager.rainWorld.options.ScreenSize.y - 15f)
             alpha = 1f,
             color = new Color(0.8f, 0.8f, 0.8f),

@@ -1,7 +1,7 @@
 {
     "id": "nope.background.preview",
     "name": "Background Preview",
-    "version": "0.1.2",
+    "version": "0.1.3",
     "authors": "Nope",
     "description": "Click on the PREVIEW button in Options -> Backgrounds to preview any Scene in full-screen, or on the button in this mod's Remix menu.\nThe Preview menu includes controls info, and you can configure what to see with keyboard.\nWorks with and without Remix/MSC/any other mod\nThis might still spoil you, so user discretion is advised !\n",
     "requirements": [],

@@ -1,0 +1,13 @@
+{
+    "id": "nope.telemetry.blocker",
+    "name": "Epic Online Services Blocker",
+    "version": "0.0.3",
+    "authors": "Nope",
+    "description": "A mod that prevents EOS from sending telemetry to Epic Games. Does so by renaming Data/Managed/com.playeveryware.eos.core.dll to com.playeveryware.eos.core_disabled.dll.\nYep, this runs in the background even if you're using the game from Steam (or anywhere).\nEpic also attempts to send telemetry. Me no like telemetry",
+    "requirements": [],
+    "requirements_names": [],
+    "checksum_override_version": true,
+    "hide_version": false,
+    "source": "",
+
+  }

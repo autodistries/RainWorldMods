@@ -1,0 +1,13 @@
+{
+    "id": "nope.backup.tools",
+    "name": "Backup tools",
+    "version": "0.0.1",
+    "authors": "Nope",
+    "description": "Backups-related QOLs.\nAllows for 50+ auto backups, disabling auto backups.\nBackups quantity and size, and page numbers on the menu.",
+    "requirements": [],
+    "requirements_names": [],
+    "checksum_override_version": true,
+    "hide_version": false,
+    "source": "",
+
+  }
