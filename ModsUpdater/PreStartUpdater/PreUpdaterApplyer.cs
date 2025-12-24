@@ -7,10 +7,8 @@ using Mono.Cecil;
 using MonoMod.ModInterop;
 using static System.Diagnostics.Trace;
 using static PreStartUpdater.FileManager;
+using static PreStartUpdater.Logs;
 
-
-using UnityEngine;
-using UnityEngine.UI;
 
 namespace PreStartUpdater;
 
@@ -34,9 +32,6 @@ public static class PreStartUpdaterPatcher
 
 
 
-    // UI
-    private static GameObject messagePanel;
-    private static Text messageText;
 
 
     public static void Finish() {
@@ -46,23 +41,22 @@ public static class PreStartUpdaterPatcher
         DirectoryInfo MODSUPDATERPATH = new DirectoryInfo(Path.Combine(BEPINEXPATH.Parent.FullName,"ModsUpdater"));
         FileInfo[] pendingUpdatesFile = MODSUPDATERPATH.GetFiles("pendingUpdates.txt");
         if (pendingUpdatesFile.Length == 0) {
-            WriteLine("No updates pending. Exiting.");
+            logInfo("No updates pending. Exiting.");
             return;
         } else {
-            WriteLine("Updates file found.");
+            logInfo("Updates file found.");
             using StreamReader r = new(pendingUpdatesFile[0].FullName);
             string contents = r.ReadToEnd();
             r.Close();
-            WriteLine("eee");
             List<string> lines = contents.Split('\n').ToList().FindAll((line) => line.Split('|').Length == 3);
-            WriteLine($"Valid lines: {lines.Count}");
+            logInfo($"Valid lines: {lines.Count}");
             foreach (string line in lines) {
                 string[] decinfo = line.Split('|');
                 PendingUpdates.Add(new(decinfo[0], decinfo[1], decinfo[2]));
-                WriteLine(PendingUpdates[PendingUpdates.Count - 1]);
+                logInfo(PendingUpdates[PendingUpdates.Count - 1]);
             }
 
-            WriteLine($"Applying updates for {PendingUpdates.Count} mods...");
+            logInfo($"Applying updates for {PendingUpdates.Count} mods...");
 
             foreach (var pendingUpdate in PendingUpdates) {
                 pendingUpdate.UpdateProcess();
@@ -114,7 +108,7 @@ internal class PendingUpdate
 
             if (PreStartUpdaterPatcher.MODSFOLDER.Parent.FullName != previousDirInfo.Parent.FullName && PreviousModFolderPath != "")
             {
-                WriteLine($"TARGET MOD FOLDER IS NOT INSIDE mods FOLDER !!! ABORTING {PreStartUpdaterPatcher.MODSFOLDER.Parent.FullName} vs {previousDirInfo.Parent.FullName}");
+                logInfo($"TARGET MOD FOLDER IS NOT INSIDE mods FOLDER !!! ABORTING {PreStartUpdaterPatcher.MODSFOLDER.Parent.FullName} vs {previousDirInfo.Parent.FullName}");
                 return false;
             }
             string forcedName = previousDirInfo.Name;
@@ -122,24 +116,24 @@ internal class PendingUpdate
             {
                 if (!RecursiveDelete(previousDirInfo))
                 {
-                    WriteLine($"Could not update {ModName}: could not delete previous folder fully. Are some dlls still being used ?");
+                    logInfo($"Could not update {ModName}: could not delete previous folder fully. Are some dlls still being used ?");
                     return false;
                 }
             }
             if (!UnzipZipToModsFolder(ZipToUnzip, forcedName))
             {
-                WriteLine($"Failed to unzip {ZipToUnzip}");
+                logInfo($"Failed to unzip {ZipToUnzip}");
                 return false;
             }
         } else {
             if (!UnzipZipToModsFolder(ZipToUnzip))
             {
-                WriteLine($"Failed to unzip {ZipToUnzip}");
+                logInfo($"Failed to unzip {ZipToUnzip}");
                 return false;
             }
         }
         new FileInfo(ZipToUnzip).Delete();
-        WriteLine($"Successfully updated {ModName}");
+        logInfo($"Successfully updated {ModName}");
         return true;
     }
 }

@@ -16,13 +16,11 @@
         <HintPath>$(RWDir)/BepInEx/core/*.dll</HintPath>
         <Private>true</Private>
         </Reference>
-
+<!-- 
         <Reference Include="$(RWDir)/RainWorld_Data/Managed/UnityEngine*">
-        <HintPath>$(RWDir)/BepInEx/core/*.dll</HintPath>
+        <HintPath>$(RWDir)/RainWorld_Data/Managed/UnityEngine*.dll</HintPath>
         <Private>false</Private>
-        </Reference>
-
-
+        </Reference> -->
 
         <Reference Include="./libs/*.dll">
         <Private>false</Private>
