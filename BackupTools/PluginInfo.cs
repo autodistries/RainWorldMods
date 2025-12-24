@@ -5,6 +5,6 @@ namespace BackupTools
     {
         public const string PLUGIN_GUID = "nope.backup.tools";
         public const string PLUGIN_NAME = "Backup tools";
-        public const string PLUGIN_VERSION = "0.0.1";
+        public const string PLUGIN_VERSION = "0.0.2";
     }
 }

@@ -11,10 +11,10 @@
         Put whatever you want inside here : -->
         <PluginID>nope.backup.tools</PluginID>
         <Product>Backup tools</Product>
-        <Version>0.0.1</Version>
+        <Version>0.0.2</Version>
         <Author>Nope</Author>
         <Requirements></Requirements>
-        <TargetGameVer>v1.10.3</TargetGameVer>
+        <TargetGameVer></TargetGameVer>
         <ModDesc>Backups-related QOLs._newline_Allows for 50+ auto backups, disabling auto backups._newline_Backups quantity and size, and page numbers on the menu.</ModDesc>
         <Source></Source>
         <!-- These are variables we'll use inside this file -->
